@@ -206,6 +206,45 @@
         .stats-filter{display:flex;gap:.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;}
         .stats-filter input,.stats-filter select{padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:6px;font-family:'Work Sans',sans-serif;font-size:.82rem;}
         .stats-filter input{flex:1;min-width:140px;}
+
+        /* ── COLLAPSE / EXPAND ── */
+        .collapse-toggle{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);width:26px;height:26px;border-radius:50%;background:var(--primary);color:white;border:2px solid white;font-size:.8rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15);transition:transform .2s,background .2s;line-height:1;}
+        .collapse-toggle:hover{background:var(--primary-light);transform:translateX(-50%) scale(1.15);}
+        .collapse-toggle.collapsed{background:var(--accent);color:#1a1a1a;}
+        .tree-node.collapsed > .connector,.tree-node.collapsed > .children{display:none !important;}
+        .tree-node.collapsed > .node-card{border-style:dashed;opacity:.85;}
+
+        /* ── BUDGET SIMULATOR ── */
+        .budget-input-row{display:flex;gap:.75rem;align-items:flex-end;margin-bottom:1.25rem;flex-wrap:wrap;}
+        .budget-input-row .form-group{margin-bottom:0;flex:1;min-width:140px;}
+        .budget-input-row input{font-size:1.1rem;font-weight:600;text-align:right;}
+        .budget-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem;margin-bottom:1.25rem;}
+        .budget-card{background:linear-gradient(135deg,#f0faf3,#e8f5e9);border-radius:10px;padding:1rem;border:1.5px solid #a7f3d0;}
+        .budget-card .budget-val{font-family:'Crimson Pro',serif;font-size:1.5rem;font-weight:700;color:var(--primary);}
+        .budget-card .budget-lbl{font-size:.72rem;color:var(--text-secondary);margin-top:.2rem;}
+
+        /* ── HISTORY / TIMELINE ── */
+        .timeline{position:relative;padding-left:24px;}
+        .timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border);}
+        .timeline-item{position:relative;padding:.6rem 0 .6rem .75rem;font-size:.82rem;}
+        .timeline-item::before{content:'';position:absolute;left:-20px;top:.85rem;width:10px;height:10px;border-radius:50%;background:var(--primary);border:2px solid white;box-shadow:0 0 0 1px var(--border);}
+        .timeline-item.t-delete::before{background:var(--danger);}
+        .timeline-item.t-add::before{background:#16a34a;}
+        .timeline-item.t-edit::before{background:var(--accent);}
+        .timeline-item.t-reset::before{background:#6366f1;}
+        .timeline-time{font-size:.7rem;color:var(--text-secondary);}
+        .timeline-msg{margin-top:2px;}
+
+        /* ── COMPARISON TABLE ── */
+        .cmp-grid{display:grid;gap:1px;background:var(--border);border-radius:8px;overflow:hidden;font-size:.78rem;}
+        .cmp-cell{background:white;padding:.5rem .6rem;}
+        .cmp-header{background:var(--primary);color:white;font-weight:600;padding:.55rem .6rem;position:sticky;top:0;}
+        .cmp-highlight{background:#f0faf3;font-weight:600;}
+        .cmp-best{background:#d1fae5;font-weight:700;color:#065f46;}
+
+        /* Stats tabs scroll for many tabs */
+        .stats-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
+        .stats-tab{white-space:nowrap;flex-shrink:0;}
     </style>
 </head>
 <body class="mode-desktop">
@@ -257,6 +296,8 @@
             <button class="btn btn-secondary btn-small" onclick="importData()">📂 <span class="hide-xs">Učitaj</span></button>
         </div>
         <div class="zoom-btns" style="display:flex;gap:.4rem;align-items:center;">
+            <button class="btn btn-secondary btn-icon" onclick="collapseAll()" title="Skupi sve">🔽</button>
+            <button class="btn btn-secondary btn-icon" onclick="expandAll()" title="Raširi sve">🔼</button>
             <button class="btn btn-secondary btn-icon" onclick="zoomOut()" title="Smanji">➖</button>
             <span class="zoom-level" id="zoomLabel">100%</span>
             <button class="btn btn-secondary btn-icon" onclick="zoomIn()" title="Povećaj">➕</button>
@@ -336,8 +377,15 @@
                 <button class="stats-tab active" onclick="switchStatsTab('overview',this)">Pregled</button>
                 <button class="stats-tab" onclick="switchStatsTab('ranking',this)">Rangiranje</button>
                 <button class="stats-tab" onclick="switchStatsTab('departments',this)">Odjeli</button>
+                <button class="stats-tab" onclick="switchStatsTab('comparison',this)">Podružnice</button>
                 <button class="stats-tab" onclick="switchStatsTab('education',this)">Obrazovanje</button>
                 <button class="stats-tab" onclick="switchStatsTab('workConditions',this)">Uslovi rada</button>
+                <button class="stats-tab" onclick="switchStatsTab('budget',this)">Budžet</button>
+                <button class="stats-tab" onclick="switchStatsTab('history',this)">Historija</button>
+            </div>
+            <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-small" onclick="exportCSV()">📥 Export CSV</button>
+                <button class="btn btn-secondary btn-small" onclick="exportPDF()">📄 Export PDF</button>
             </div>
             <div id="statsContent"></div>
         </div>
@@ -1207,6 +1255,20 @@ function resetToDefaults() {
     orgPositions = JSON.parse(JSON.stringify(DEFAULT_POSITIONS));
     saveData(); renderTree(); updateUndoBtn();
     showToast('Podaci vraćeni na originalne vrijednosti — 570 pozicija učitano');
+    logChange('reset', 'Podaci resetovani na originalne vrijednosti');
+}
+
+// Collapse state
+const collapsedNodes = new Set();
+
+// Change history
+const HISTORY_KEY = 'org_change_history_v1';
+let changeHistory = [];
+function loadHistory() { try { const h = localStorage.getItem(HISTORY_KEY); if (h) changeHistory = JSON.parse(h); } catch(e) { changeHistory = []; } }
+function saveHistory() { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(changeHistory.slice(-200))); } catch(e) {} }
+function logChange(type, msg) {
+    changeHistory.push({ type, msg, time: new Date().toISOString() });
+    saveHistory();
 }
 
 // Zoom state
@@ -1447,8 +1509,19 @@ function createNodeElement(node) {
         const db = document.createElement('button'); db.className = 'btn btn-danger btn-small'; db.innerHTML = '🗑️';
         db.onclick = e => { e.stopPropagation(); deleteUnit(node); }; actions.appendChild(db);
     }
-    card.appendChild(actions); nd.appendChild(card);
+    card.appendChild(actions);
+    // Collapse toggle button
     if (node.children && node.children.length > 0) {
+        const isCollapsed = collapsedNodes.has(node.id);
+        const tog = document.createElement('button'); tog.className = 'collapse-toggle' + (isCollapsed ? ' collapsed' : '');
+        tog.textContent = isCollapsed ? '+' : '−';
+        tog.title = isCollapsed ? 'Raširi' : 'Skupi';
+        tog.onclick = e => { e.stopPropagation(); toggleCollapse(node.id); };
+        card.appendChild(tog);
+    }
+    nd.appendChild(card);
+    if (node.children && node.children.length > 0) {
+        if (collapsedNodes.has(node.id)) nd.classList.add('collapsed');
         const con = document.createElement('div'); con.className = 'connector'; nd.appendChild(con);
         const ch = document.createElement('div'); ch.className = 'children';
         node.children.forEach(c => ch.appendChild(createNodeElement(c)));
@@ -1469,6 +1542,7 @@ function deleteUnit(node)   {
     delete orgPositions[node.name];
     function rem(p) { if (!p.children) return false; const i = p.children.findIndex(c => c.id === node.id); if (i !== -1) { p.children.splice(i, 1); return true; } for (let c of p.children) if (rem(c)) return true; return false; }
     rem(organizationalStructure); saveData(); renderTree(); showToast('Jedinica obrisana');
+    logChange('delete', `Obrisana jedinica: ${node.name}`);
 }
 function openUnitModal(t)   { document.getElementById('modalTitle').textContent = t; document.getElementById('unitModal').classList.add('active'); if (!currentEditNode) document.getElementById('unitName').value = ''; }
 function closeUnitModal()   { document.getElementById('unitModal').classList.remove('active'); currentEditNode = null; currentParentNode = null; }
@@ -1481,10 +1555,12 @@ document.getElementById('unitForm').addEventListener('submit', e => {
         const old = currentEditNode.name; currentEditNode.name = name;
         if (old !== name && orgPositions[old]) { orgPositions[name] = orgPositions[old]; delete orgPositions[old]; }
         showToast('Jedinica ažurirana');
+        logChange('edit', `Uređena jedinica: ${old} → ${name}`);
     } else {
         const nn = { id: 'unit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9), name, level: currentParentNode.level + 1, children: [] };
         if (!currentParentNode.children) currentParentNode.children = [];
         currentParentNode.children.push(nn); orgPositions[name] = []; showToast('Jedinica dodana');
+        logChange('add', `Dodana jedinica: ${name}`);
     }
     saveData(); renderTree(); closeUnitModal();
 });
@@ -1540,12 +1616,15 @@ function addPosition() {
     if (!orgPositions[currentUnitForPositions.name]) orgPositions[currentUnitForPositions.name] = [];
     orgPositions[currentUnitForPositions.name].push({ title: n.trim(), employee: { name:'', education:'', experience:'', other:'' } });
     saveData(); showPositions(currentUnitForPositions); renderTree(); showToast('Pozicija dodana');
+    logChange('add', `Dodana pozicija: ${n.trim()} u ${currentUnitForPositions.name}`);
 }
 function deletePosition(index) {
+    const posName = posTitle_(orgPositions[currentUnitForPositions.name][index]);
     if (!confirm('Obrisati ovu poziciju?\nMožete koristiti Undo za povrat.')) return;
     pushUndo();
     orgPositions[currentUnitForPositions.name].splice(index, 1);
     saveData(); showPositions(currentUnitForPositions); renderTree(); showToast('Pozicija obrisana');
+    logChange('delete', `Obrisana pozicija: ${posName} iz ${currentUnitForPositions.name}`);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1587,6 +1666,7 @@ function confirmMovePosition() {
     if (!orgPositions[target]) orgPositions[target] = [];
     orgPositions[target].push(selectedPosition.pos);
     saveData(); showPositions(currentUnitForPositions); renderTree(); closeMoveModal(); showToast(`Premješteno u ${target}`);
+    logChange('edit', `Premještena pozicija: ${selectedPosition.title} → ${target}`);
 }
 function movePositionToUnit() { if (!selectedPosition) { showToast('Prvo označite poziciju'); return; } openMoveModal(); }
 
@@ -1616,6 +1696,7 @@ document.getElementById('employeeForm').addEventListener('submit', e => {
     saveData(); renderTree();
     if (currentUnitForPositions && currentUnitForPositions.name === unitName) showPositions(currentUnitForPositions);
     closeEmployeeModal(); showToast('Podaci sačuvani');
+    logChange('edit', `Radnik ažuriran: ${emp.name || '(prazan)'} na poziciji ${posTitle_(p)}`);
 });
 
 // ════════════════════════════════════════════════════════════
@@ -1657,7 +1738,7 @@ async function handleImport(event) {
             for (let s of doc.getElementsByTagName('script')) { const st = s.textContent; if (st.includes('let organizationalStructure = {')) { try { const m = st.match(/let organizationalStructure = ({[\s\S]*?});[\s\S]*?let orgPositions = ({[\s\S]*?});/); if (m) { importedData = { structure: eval('(' + m[1] + ')'), positions: eval('(' + m[2] + ')') }; break; } } catch(ex) {} } }
         }
         if (importedData && importedData.structure && importedData.positions) {
-            if (confirm('Uvesti podatke? Ovo zamjenjuje trenutne podatke.\nMožete koristiti Undo za povrat.')) { pushUndo(); Object.assign(organizationalStructure, importedData.structure); orgPositions = importedData.positions; await saveData(); renderTree(); showToast('Podaci uvezeni'); }
+            if (confirm('Uvesti podatke? Ovo zamjenjuje trenutne podatke.\nMožete koristiti Undo za povrat.')) { pushUndo(); Object.assign(organizationalStructure, importedData.structure); orgPositions = importedData.positions; await saveData(); renderTree(); showToast('Podaci uvezeni'); logChange('add', 'Uvezeni podaci iz fajla: ' + file.name); }
         } else showToast('Nije pronađen validan format');
     } catch(e) { showToast('Greška: ' + e.message); }
 }
@@ -1688,6 +1769,7 @@ async function handleImport(event) {
     setPlatform(plat);
     updateHeaderHeight();
     window.addEventListener('resize', updateHeaderHeight);
+    loadHistory();
     loadData();
     // Show pinch hint on first mobile visit
     if (!saved && isMobile) setTimeout(showPinchHint, 1200);
@@ -1738,8 +1820,11 @@ function renderStatsTab() {
         case 'overview': container.innerHTML = renderOverview(allPos); break;
         case 'ranking': container.innerHTML = renderRanking(allPos); break;
         case 'departments': container.innerHTML = renderDepartments(allPos); break;
+        case 'comparison': container.innerHTML = renderComparison(allPos); break;
         case 'education': container.innerHTML = renderEducation(allPos); break;
         case 'workConditions': container.innerHTML = renderWorkConditions(allPos); break;
+        case 'budget': container.innerHTML = renderBudget(allPos); recalcBudget(); break;
+        case 'history': container.innerHTML = renderHistory(); break;
     }
 }
 
@@ -2008,6 +2093,298 @@ function filterRankTable(q) {
     document.querySelectorAll('#rankTable .rank-row').forEach(row => {
         row.style.display = row.dataset.search.includes(q) ? '' : 'none';
     });
+}
+
+// ════════════════════════════════════════════════════════════
+// COLLAPSE / EXPAND
+// ════════════════════════════════════════════════════════════
+function toggleCollapse(nodeId) {
+    if (collapsedNodes.has(nodeId)) collapsedNodes.delete(nodeId);
+    else collapsedNodes.add(nodeId);
+    renderTree();
+}
+function collapseAll() {
+    function walk(n) { if (n.children && n.children.length) { collapsedNodes.add(n.id); n.children.forEach(walk); } }
+    walk(organizationalStructure);
+    collapsedNodes.delete(organizationalStructure.id); // Keep root open
+    renderTree(); showToast('Sve skupljeno');
+}
+function expandAll() {
+    collapsedNodes.clear();
+    renderTree(); showToast('Sve rašireno');
+}
+
+// ════════════════════════════════════════════════════════════
+// TAB: UPOREDNA ANALIZA PODRUŽNICA
+// ════════════════════════════════════════════════════════════
+function renderComparison(allPos) {
+    // Find all podružnice
+    const branches = Object.keys(orgPositions).filter(k => /PODRU|POGON/i.test(k));
+    if (branches.length === 0) return '<p style="color:var(--text-secondary);padding:1rem;">Nema podružnica za usporedbu.</p>';
+
+    const branchData = branches.map(name => {
+        const pos = (orgPositions[name] || []).filter(p => p && typeof p === 'object');
+        const wk = pos.filter(p => p.koef !== null && p.koef !== undefined);
+        const avgK = wk.length ? (wk.reduce((s,p) => s + p.koef, 0) / wk.length) : 0;
+        const avgUk = wk.length ? (wk.reduce((s,p) => s + (p.ukupno || p.koef || 0), 0) / wk.length) : 0;
+        const maxK = wk.length ? Math.max(...wk.map(p => p.ukupno || p.koef || 0)) : 0;
+        const minK = wk.length ? Math.min(...wk.map(p => p.koef)) : 0;
+        const withUR = pos.filter(p => p.usloviRada > 0).length;
+        const popunjene = pos.filter(p => p.employee && p.employee.name).length;
+        const eduBreak = {};
+        pos.forEach(p => {
+            let cat = categorizeEdu(p.stepen);
+            eduBreak[cat] = (eduBreak[cat] || 0) + 1;
+        });
+        // Short name
+        const shortName = name.replace(/PODRUŽNICA\s*/i, '').replace(/ŠUMARIJA\s*/i, 'Š. ').replace(/GRAĐENJE MEHANIZACIJA I ODRŽAVANJE/i, 'GMO');
+        return { name, shortName, total: pos.length, withKoef: wk.length, avgK: avgK.toFixed(2), avgUk: avgUk.toFixed(2), maxK: maxK.toFixed(2), minK: minK.toFixed(2), withUR, popunjene, eduBreak };
+    });
+
+    // Sort by total positions
+    branchData.sort((a, b) => b.total - a.total);
+
+    const metrics = ['total', 'avgK', 'avgUk', 'maxK', 'minK', 'withUR', 'popunjene'];
+    const metricLabels = { total: 'Ukupno pozicija', avgK: 'Prosj. koef.', avgUk: 'Prosj. ukupno', maxK: 'Najviši koef.', minK: 'Najniži koef.', withUR: 'Sa usl. rada', popunjene: 'Popunjeno' };
+
+    // Find best values
+    const best = {};
+    metrics.forEach(m => {
+        const vals = branchData.map(b => parseFloat(b[m]));
+        if (m === 'minK') best[m] = Math.min(...vals.filter(v => v > 0));
+        else best[m] = Math.max(...vals);
+    });
+
+    // Build comparison table
+    const cols = branchData.length + 1;
+    let headerCells = `<div class="cmp-header">Metrika</div>` + branchData.map(b => `<div class="cmp-header" title="${b.name}">${b.shortName}</div>`).join('');
+    let rows = metrics.map(m => {
+        let label = `<div class="cmp-cell" style="font-weight:600;background:var(--bg-main);">${metricLabels[m]}</div>`;
+        let cells = branchData.map(b => {
+            const val = b[m];
+            const isBest = parseFloat(val) === best[m] && parseFloat(val) > 0;
+            return `<div class="cmp-cell ${isBest ? 'cmp-best' : ''}">${val}${isBest ? ' ★' : ''}</div>`;
+        }).join('');
+        return label + cells;
+    }).join('');
+
+    // Bar chart comparison - average koef
+    const maxAvg = Math.max(...branchData.map(b => parseFloat(b.avgUk)), 1);
+    let barChart = branchData.map(b => {
+        const pct = (parseFloat(b.avgUk) / maxAvg * 100).toFixed(0);
+        return `<div class="bar-row">
+            <div class="bar-label" title="${b.name}">${b.shortName}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.max(pct,3)}%">${pct > 25 ? `<span class="bar-val">${b.avgUk}</span>` : ''}</div></div>
+            ${pct <= 25 ? `<span class="bar-val-outside">${b.avgUk}</span>` : ''}
+        </div>`;
+    }).join('');
+
+    return `<h4 style="font-family:'Crimson Pro',serif;color:var(--primary);margin-bottom:.75rem;">Prosječni ukupni koeficijent</h4>
+    ${barChart}
+    <h4 style="font-family:'Crimson Pro',serif;color:var(--primary);margin:1.25rem 0 .75rem;">Uporedna tabela (★ = najbolji)</h4>
+    <div class="stats-scroll">
+        <div class="cmp-grid" style="grid-template-columns:160px repeat(${branchData.length},1fr);">
+            ${headerCells}${rows}
+        </div>
+    </div>
+    <div style="margin-top:.75rem;font-size:.78rem;color:var(--text-secondary);">Uspoređeno ${branchData.length} podružnica/pogona</div>`;
+}
+
+function categorizeEdu(stepen) {
+    const s = (stepen || '').trim();
+    if (/VSS.*VII.*240|VSS.*VII\/2/i.test(s)) return 'VSS 240+';
+    if (/VSS.*VII.*180|VSS.*VII\/1/i.test(s)) return 'VSS 180+';
+    if (/VŠS/i.test(s)) return 'VŠS';
+    if (/SSS.*KV|KV.*SSS/i.test(s)) return 'SSS/KV';
+    if (/^SSS|\/\s*SSS/i.test(s)) return 'SSS';
+    if (/VKV/i.test(s)) return 'VKV';
+    if (/^KV/i.test(s)) return 'KV';
+    if (/PK/i.test(s)) return 'PK';
+    if (/NK/i.test(s)) return 'NK';
+    if (/Statut|Član/i.test(s)) return 'Statutarne';
+    return 'Ostalo';
+}
+
+// ════════════════════════════════════════════════════════════
+// TAB: BUDŽET SIMULATOR
+// ════════════════════════════════════════════════════════════
+function renderBudget(allPos) {
+    const savedBase = localStorage.getItem('org_budget_base') || '1000';
+    return `
+    <div class="budget-input-row">
+        <div class="form-group"><label>Osnovica za obračun (KM)</label>
+            <input type="number" id="budgetBase" value="${savedBase}" min="100" step="50" oninput="recalcBudget()">
+        </div>
+        <div class="form-group"><label>Broj mjeseci</label>
+            <input type="number" id="budgetMonths" value="12" min="1" max="13" oninput="recalcBudget()">
+        </div>
+    </div>
+    <div id="budgetResults"></div>`;
+}
+
+function recalcBudget() {
+    const base = parseFloat(document.getElementById('budgetBase').value) || 1000;
+    const months = parseInt(document.getElementById('budgetMonths').value) || 12;
+    localStorage.setItem('org_budget_base', base);
+    const allPos = getAllPositions();
+    const withKoef = allPos.filter(p => p.koef !== null && p.koef !== undefined);
+    const ugovorni = allPos.filter(p => !p.koef && p.napomena);
+
+    let totalMonthly = 0, totalMonthlyUR = 0;
+    withKoef.forEach(p => {
+        const salary = base * (p.ukupno || p.koef);
+        totalMonthly += base * p.koef;
+        totalMonthlyUR += salary;
+    });
+    const totalAnnual = totalMonthlyUR * months;
+    const avgSalary = withKoef.length ? (totalMonthlyUR / withKoef.length) : 0;
+    const maxSalary = withKoef.length ? base * Math.max(...withKoef.map(p => p.ukupno || p.koef || 0)) : 0;
+    const minSalary = withKoef.length ? base * Math.min(...withKoef.map(p => p.koef)) : 0;
+    const urBonus = totalMonthlyUR - totalMonthly;
+
+    // Per-department breakdown
+    const deptBudgets = [];
+    for (const [dept, positions] of Object.entries(orgPositions)) {
+        const pos = (positions || []).filter(p => p && typeof p === 'object' && p.koef !== null && p.koef !== undefined);
+        if (!pos.length) continue;
+        const deptTotal = pos.reduce((s, p) => s + base * (p.ukupno || p.koef || 0), 0);
+        deptBudgets.push({ dept, count: pos.length, monthly: deptTotal, annual: deptTotal * months });
+    }
+    deptBudgets.sort((a, b) => b.monthly - a.monthly);
+    const maxDeptMonthly = Math.max(...deptBudgets.map(d => d.monthly), 1);
+
+    let deptRows = deptBudgets.map(d => {
+        const pct = (d.monthly / maxDeptMonthly * 100).toFixed(0);
+        return `<tr>
+            <td>${d.dept}</td>
+            <td class="num">${d.count}</td>
+            <td class="num">${formatMoney(d.monthly)}</td>
+            <td class="num">${formatMoney(d.annual)}</td>
+            <td><div class="bar-track" style="height:14px"><div class="bar-fill" style="width:${Math.max(pct,2)}%"></div></div></td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('budgetResults').innerHTML = `
+    <div class="budget-summary">
+        <div class="budget-card"><div class="budget-val">${formatMoney(totalMonthlyUR)}</div><div class="budget-lbl">Mjesečna masa (sa UR)</div></div>
+        <div class="budget-card"><div class="budget-val">${formatMoney(totalMonthly)}</div><div class="budget-lbl">Mjesečna masa (baza)</div></div>
+        <div class="budget-card"><div class="budget-val">${formatMoney(urBonus)}</div><div class="budget-lbl">Mjesečni UR bonus</div></div>
+        <div class="budget-card"><div class="budget-val">${formatMoney(totalAnnual)}</div><div class="budget-lbl">Godišnja masa (${months} mj.)</div></div>
+        <div class="budget-card"><div class="budget-val">${formatMoney(avgSalary)}</div><div class="budget-lbl">Prosječna plata</div></div>
+        <div class="budget-card"><div class="budget-val">${formatMoney(maxSalary)}</div><div class="budget-lbl">Najveća plata</div></div>
+        <div class="budget-card"><div class="budget-val">${formatMoney(minSalary)}</div><div class="budget-lbl">Najniža plata</div></div>
+        <div class="budget-card"><div class="budget-val">${ugovorni.length}</div><div class="budget-lbl">Ugovornih (nije u masi)</div></div>
+    </div>
+    <h4 style="font-family:'Crimson Pro',serif;color:var(--primary);margin-bottom:.75rem;">Troškovi po odjelima</h4>
+    <div class="stats-scroll"><table class="stats-table">
+        <thead><tr><th>Odjel</th><th>Poz.</th><th>Mjesečno (KM)</th><th>Godišnje (KM)</th><th>Udio</th></tr></thead>
+        <tbody>${deptRows}</tbody>
+        <tfoot><tr style="font-weight:700;background:#f0faf3;"><td>UKUPNO</td><td class="num">${withKoef.length}</td><td class="num">${formatMoney(totalMonthlyUR)}</td><td class="num">${formatMoney(totalAnnual)}</td><td></td></tr></tfoot>
+    </table></div>`;
+}
+
+function formatMoney(n) {
+    return n.toLocaleString('bs-BA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ════════════════════════════════════════════════════════════
+// TAB: HISTORIJA PROMJENA
+// ════════════════════════════════════════════════════════════
+function renderHistory() {
+    if (changeHistory.length === 0) return '<p style="color:var(--text-secondary);text-align:center;padding:2rem;">Nema zabilježenih promjena.<br><br>Historija se bilježi automatski pri svakoj izmjeni<br>(brisanje, dodavanje, uređivanje, premještanje, reset).</p>';
+
+    const reversed = [...changeHistory].reverse();
+    let items = reversed.map(h => {
+        const d = new Date(h.time);
+        const timeStr = d.toLocaleDateString('bs-BA') + ' ' + d.toLocaleTimeString('bs-BA', { hour: '2-digit', minute: '2-digit' });
+        return `<div class="timeline-item t-${h.type}">
+            <div class="timeline-time">${timeStr}</div>
+            <div class="timeline-msg">${h.msg}</div>
+        </div>`;
+    }).join('');
+
+    return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <span style="font-size:.82rem;color:var(--text-secondary);">${changeHistory.length} promjena zabilježeno</span>
+        <button class="btn btn-danger btn-small" onclick="clearHistory()">Obriši historiju</button>
+    </div>
+    <div class="stats-scroll" style="max-height:60vh;"><div class="timeline">${items}</div></div>`;
+}
+
+function clearHistory() {
+    if (!confirm('Obrisati kompletnu historiju promjena?')) return;
+    changeHistory = [];
+    saveHistory();
+    renderStatsTab();
+    showToast('Historija obrisana');
+}
+
+// ════════════════════════════════════════════════════════════
+// EXPORT CSV / PDF
+// ════════════════════════════════════════════════════════════
+function exportCSV() {
+    const allPos = getAllPositions();
+    const BOM = '\uFEFF';
+    let csv = BOM + 'Odjel;Pozicija;Stepen;Koeficijent;Uslovi rada %;Ukupno;Napomena;Radnik;Obrazovanje;Iskustvo\n';
+    allPos.forEach(p => {
+        const emp = p.employee || {};
+        csv += [p._dept, p.title, p.stepen || '', p.koef || '', p.usloviRada || 0, p.ukupno || p.koef || '', p.napomena || '', emp.name || '', emp.education || '', emp.experience || ''].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';') + '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url;
+    a.download = `organizacija_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    showToast('CSV eksportovan — ' + allPos.length + ' pozicija');
+    logChange('export', 'Eksportovan CSV sa ' + allPos.length + ' pozicija');
+}
+
+function exportPDF() {
+    const allPos = getAllPositions();
+    const withKoef = allPos.filter(p => p.koef !== null && p.koef !== undefined);
+    const avgK = withKoef.length ? (withKoef.reduce((s,p) => s + p.koef, 0) / withKoef.length).toFixed(2) : '–';
+
+    const pw = window.open('', '_blank');
+    pw.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Organizacijska Šema — Izvještaj</title>
+    <style>
+        body{font-family:Arial,sans-serif;padding:2rem;color:#333;font-size:11px;}
+        h1{color:#1a4d2e;font-size:18px;border-bottom:2px solid #1a4d2e;padding-bottom:8px;}
+        h2{color:#1a4d2e;font-size:14px;margin-top:20px;}
+        .summary{display:flex;gap:15px;margin:10px 0 20px;flex-wrap:wrap;}
+        .s-card{background:#f5f7fa;padding:10px 15px;border-radius:6px;border:1px solid #e0e4e8;text-align:center;}
+        .s-num{font-size:20px;font-weight:700;color:#1a4d2e;}
+        .s-lbl{font-size:9px;color:#666;}
+        table{width:100%;border-collapse:collapse;margin-top:8px;page-break-inside:auto;}
+        th{background:#1a4d2e;color:white;padding:5px 6px;text-align:left;font-size:10px;}
+        td{padding:4px 6px;border-bottom:1px solid #e0e4e8;font-size:10px;}
+        tr:nth-child(even) td{background:#f9fafb;}
+        .dept-header{background:#e8f5e9;font-weight:700;padding:6px;font-size:11px;margin-top:15px;border-left:3px solid #1a4d2e;}
+        .footer{margin-top:30px;text-align:center;font-size:9px;color:#999;border-top:1px solid #e0e4e8;padding-top:10px;}
+        @media print{.no-print{display:none;}}
+    </style></head><body>
+    <h1>ŠPD Unsko-Sanske Šume — Organizacijska Šema</h1>
+    <p style="color:#666;">Izvještaj generisan: ${new Date().toLocaleDateString('bs-BA')} ${new Date().toLocaleTimeString('bs-BA')}</p>
+    <div class="summary">
+        <div class="s-card"><div class="s-num">${allPos.length}</div><div class="s-lbl">Ukupno pozicija</div></div>
+        <div class="s-card"><div class="s-num">${Object.keys(orgPositions).length}</div><div class="s-lbl">Odjela</div></div>
+        <div class="s-card"><div class="s-num">${avgK}</div><div class="s-lbl">Prosj. koeficijent</div></div>
+    </div>
+    <button class="no-print" onclick="window.print()" style="padding:8px 16px;background:#1a4d2e;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:15px;">🖨️ Štampaj / Spremi PDF</button>`);
+
+    for (const [dept, positions] of Object.entries(orgPositions)) {
+        const pos = (positions || []).filter(p => p && typeof p === 'object');
+        if (!pos.length) continue;
+        pw.document.write(`<div class="dept-header">${dept} (${pos.length} pozicija)</div>`);
+        pw.document.write(`<table><thead><tr><th>#</th><th>Pozicija</th><th>Stepen</th><th>Koef.</th><th>UR%</th><th>Ukupno</th><th>Radnik</th></tr></thead><tbody>`);
+        pos.forEach((p, i) => {
+            const emp = p.employee || {};
+            pw.document.write(`<tr><td>${i+1}</td><td>${p.title||''}</td><td>${p.stepen||''}</td><td>${p.koef||'Ugovor'}</td><td>${p.usloviRada||'–'}</td><td>${p.ukupno||p.koef||'–'}</td><td>${emp.name||'–'}</td></tr>`);
+        });
+        pw.document.write('</tbody></table>');
+    }
+    pw.document.write(`<div class="footer">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — Organizacijska šema</div></body></html>`);
+    pw.document.close();
+    showToast('PDF izvještaj otvoren u novom tabu');
+    logChange('export', 'Generisan PDF izvještaj');
 }
 
 // Add statsModal to backdrop click list
