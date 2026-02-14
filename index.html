@@ -92,6 +92,12 @@
         .node-card{background:var(--bg-card);border:2px solid var(--border);border-radius:12px;padding:1.25rem;min-width:260px;max-width:360px;box-shadow:0 3px 10px var(--shadow);transition:border-color .2s,box-shadow .2s,transform .2s;position:relative;}
         .node-card:hover{border-color:var(--primary);box-shadow:0 6px 20px var(--shadow-hover);transform:translateY(-2px);}
         .node-card.level-0{border-width:3px;border-color:var(--primary);background:linear-gradient(135deg,#fff 0%,#f3faf5 100%);}
+        .node-card.has-children{background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);border-color:#d4a017;border-width:2.5px;}
+        .node-card.has-children .node-title{color:#92400e;}
+        .node-card.has-children:hover{border-color:#b8860b;box-shadow:0 6px 20px rgba(180,135,20,.18);}
+        .node-card.has-children .node-badge{background:#b8860b;}
+        .node-card.has-children .positions-preview{background:#fef9ee;}
+        .node-card.has-children .positions-preview:hover{background:#fef3c7;}
         .node-title{font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600;color:var(--primary);margin-bottom:.85rem;padding-bottom:.65rem;border-bottom:1.5px solid var(--border);}
         .node-actions{display:flex;gap:.4rem;margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border);flex-wrap:wrap;}
         .node-badge{display:inline-block;padding:.2rem .65rem;background:var(--primary);color:white;border-radius:12px;font-size:.7rem;font-weight:600;margin-top:.4rem;}
@@ -1486,7 +1492,7 @@ function renderTree() {
 }
 function createNodeElement(node) {
     const nd = document.createElement('div'); nd.className = 'tree-node'; nd.dataset.nodeId = node.id;
-    const card = document.createElement('div'); card.className = `node-card level-${node.level}`;
+    const card = document.createElement('div'); card.className = `node-card level-${node.level}${node.children && node.children.length > 0 ? ' has-children' : ''}`;
     const title = document.createElement('div'); title.className = 'node-title'; title.textContent = node.name; card.appendChild(title);
     const positions = orgPositions[node.name] || [];
     if (positions.length > 0) {
