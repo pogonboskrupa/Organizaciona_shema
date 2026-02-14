@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a4d2e">
+    <link rel="icon" href="data:,">
+    <title>Organizacijska Šema - ŠPD Unsko-Sanske Šume</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@400;500;600&display=swap');
+        :root {
+            --primary:#1a4d2e; --primary-light:#2d6a4f; --accent:#d4af37;
+            --bg-main:#f5f7fa; --bg-card:#ffffff; --text-primary:#1a1a1a;
+            --text-secondary:#666; --border:#e0e4e8;
+            --shadow:rgba(26,77,46,.08); --shadow-hover:rgba(26,77,46,.15);
+            --danger:#dc2626;
+            --header-h: 88px;
+            --controls-h: 60px;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+        html,body{height:100%;overflow-x:hidden;}
+        body{font-family:'Work Sans',sans-serif;background:var(--bg-main);color:var(--text-primary);overscroll-behavior:none;}
+
+        /* ── HEADER ── */
+        .header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);color:white;padding:1rem 1.25rem;box-shadow:0 4px 20px var(--shadow);position:sticky;top:0;z-index:200;}
+        .header-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;}
+        .header h1{font-family:'Crimson Pro',serif;font-size:1.35rem;font-weight:700;line-height:1.2;flex:1;}
+        .sync-status{display:flex;align-items:center;gap:.4rem;padding:.35rem .75rem;background:rgba(255,255,255,.15);border-radius:20px;font-size:.75rem;white-space:nowrap;}
+        .sync-indicator{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;flex-shrink:0;}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+        /* Platform badge */
+        .platform-badge{display:flex;align-items:center;gap:.3rem;padding:.3rem .6rem;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:8px;font-size:.7rem;cursor:pointer;transition:all .2s;white-space:nowrap;}
+        .platform-badge:hover,.platform-badge:active{background:rgba(255,255,255,.3);}
+
+        /* ── PLATFORM SWITCHER MODAL ── */
+        .platform-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:flex-end;justify-content:center;}
+        .platform-modal.active{display:flex;}
+        .platform-sheet{background:white;border-radius:20px 20px 0 0;padding:1.5rem 1.5rem calc(1.5rem + var(--safe-bottom));width:100%;max-width:500px;animation:slideUp .3s ease;}
+        @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        .platform-sheet h3{font-family:'Crimson Pro',serif;font-size:1.3rem;font-weight:600;color:var(--primary);margin-bottom:1rem;text-align:center;}
+        .platform-options{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+        .plat-btn{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.25rem;border:2px solid var(--border);border-radius:12px;background:white;cursor:pointer;transition:all .2s;font-family:'Work Sans',sans-serif;}
+        .plat-btn:hover,.plat-btn.active{border-color:var(--primary);background:#f0faf3;}
+        .plat-btn.active{border-width:2.5px;}
+        .plat-btn span:first-child{font-size:2rem;}
+        .plat-btn .plat-name{font-weight:600;color:var(--primary);font-size:.9rem;}
+        .plat-btn .plat-desc{font-size:.72rem;color:var(--text-secondary);text-align:center;}
+
+        /* ── CONTROLS ── */
+        .controls{background:white;border-bottom:1.5px solid var(--border);display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;position:sticky;top:var(--header-h);z-index:190;transition:padding .2s;}
+        /* Desktop controls */
+        body.mode-desktop .controls{padding:.75rem 1.5rem;}
+        body.mode-desktop .controls .btn{padding:.6rem 1.1rem;font-size:.85rem;}
+        body.mode-desktop .search-box{min-width:220px;flex:1;}
+        /* Mobile controls - compact bottom bar */
+        body.mode-mobile .controls{position:fixed;bottom:0;top:auto;left:0;right:0;z-index:190;padding:.5rem .75rem calc(.5rem + var(--safe-bottom));border-bottom:none;border-top:1.5px solid var(--border);box-shadow:0 -4px 16px rgba(0,0,0,.08);justify-content:center;gap:.4rem;background:white;}
+        body.mode-mobile .controls .zoom-btns,.controls .action-btns{display:flex;gap:.4rem;}
+
+        .btn{border:none;border-radius:8px;font-family:'Work Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:.4rem;touch-action:manipulation;}
+        .btn-primary{background:var(--primary);color:white;}
+        .btn-primary:active{background:var(--primary-light);transform:scale(.97);}
+        .btn-secondary{background:white;color:var(--primary);border:1.5px solid var(--primary);}
+        .btn-secondary:active{background:var(--primary);color:white;}
+        .btn-danger{background:var(--danger);color:white;}
+        .btn-danger:active{background:#b91c1c;}
+        .btn-icon{width:40px;height:40px;border-radius:10px;justify-content:center;font-size:1.1rem;padding:0;flex-shrink:0;}
+        .btn-small{padding:.4rem .75rem;font-size:.8rem;}
+        .search-box{position:relative;flex:1;min-width:0;}
+        .search-box input{width:100%;padding:.6rem .9rem .6rem 2.2rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Work Sans',sans-serif;font-size:.875rem;transition:border-color .2s;-webkit-appearance:none;}
+        .search-box input:focus{outline:none;border-color:var(--primary);}
+        .search-icon{position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:var(--text-secondary);font-size:.9rem;pointer-events:none;}
+
+        /* Zoom display */
+        .zoom-level{font-size:.75rem;color:var(--text-secondary);min-width:36px;text-align:center;font-weight:600;}
+
+        /* ── CONTAINER ── */
+        .container{padding:2rem 1.5rem;overflow:hidden;transition:padding-bottom .2s;}
+        body.mode-mobile .container{padding-bottom:90px;}
+
+        /* ── ZOOM WRAPPER — touch pan/pinch ── */
+        #zoomWrapper{transform-origin:top left;will-change:transform;transition:transform .05s linear;}
+        body.mode-mobile #zoomWrapper{cursor:grab;user-select:none;touch-action:none;}
+        body.mode-mobile #zoomWrapper:active{cursor:grabbing;}
+
+        /* ── TREE ── */
+        .tree{display:flex;flex-direction:column;gap:2rem;align-items:center;}
+        .tree-node{display:flex;flex-direction:column;align-items:center;position:relative;}
+        .node-card{background:var(--bg-card);border:2px solid var(--border);border-radius:12px;padding:1.25rem;min-width:260px;max-width:360px;box-shadow:0 3px 10px var(--shadow);transition:border-color .2s,box-shadow .2s,transform .2s;position:relative;}
+        .node-card:hover{border-color:var(--primary);box-shadow:0 6px 20px var(--shadow-hover);transform:translateY(-2px);}
+        .node-card.level-0{border-width:3px;border-color:var(--primary);background:linear-gradient(135deg,#fff 0%,#f3faf5 100%);}
+        .node-title{font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600;color:var(--primary);margin-bottom:.85rem;padding-bottom:.65rem;border-bottom:1.5px solid var(--border);}
+        .node-actions{display:flex;gap:.4rem;margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border);flex-wrap:wrap;}
+        .node-badge{display:inline-block;padding:.2rem .65rem;background:var(--primary);color:white;border-radius:12px;font-size:.7rem;font-weight:600;margin-top:.4rem;}
+        .positions-preview{font-size:.82rem;color:var(--text-secondary);padding:.65rem;background:var(--bg-main);border-radius:6px;margin-top:.4rem;cursor:pointer;transition:background .2s;}
+        .positions-preview:hover,.positions-preview:active{background:#e1f5e7;}
+        .children{display:flex;gap:1.75rem;margin-top:1.75rem;flex-wrap:wrap;justify-content:center;}
+        .connector{width:2px;height:28px;background:var(--primary);margin:0 auto;opacity:.7;}
+
+        /* ── MODALS ── */
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:flex-end;justify-content:center;}
+        .modal.active{display:flex;}
+        body.mode-desktop .modal{align-items:center;}
+        .modal-content{background:white;border-radius:20px 20px 0 0;padding:1.75rem 1.75rem calc(1.75rem + var(--safe-bottom));width:100%;max-width:560px;max-height:92vh;overflow-y:auto;animation:slideUp .28s ease;}
+        body.mode-desktop .modal-content{border-radius:14px;max-height:90vh;}
+        .modal-header{font-size:1.35rem;font-weight:600;margin-bottom:1.25rem;color:var(--primary);display:flex;justify-content:space-between;align-items:center;}
+        .close-btn{background:none;border:none;font-size:1.8rem;cursor:pointer;color:var(--text-secondary);line-height:1;padding:.25rem;}
+        .close-btn:active{color:var(--danger);}
+        .form-group{margin-bottom:1.25rem;}
+        .form-group label{display:block;margin-bottom:.45rem;font-weight:500;font-size:.9rem;}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:.75rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Work Sans',sans-serif;font-size:1rem;-webkit-appearance:none;}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);}
+        .modal-actions{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem;}
+        .modal-actions .btn{padding:.7rem 1.3rem;font-size:.9rem;}
+
+        /* ── POZICIJE ── */
+        .position-item{padding:.65rem .75rem;margin:.35rem 0;background:white;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem;display:flex;align-items:center;gap:.45rem;cursor:move;transition:all .18s;}
+        .position-item:hover{background:#fffbeb;border-color:var(--accent);}
+        .position-item.dragging{opacity:.5;border-style:dashed;}
+        .position-item.drag-over{border-color:var(--primary);background:#e8f5e9;transform:translateY(-2px);}
+        .drag-handle{cursor:grab;color:var(--text-secondary);font-size:1.15rem;flex-shrink:0;padding:.1rem;}
+        .drag-handle:active{cursor:grabbing;}
+        .pos-info{flex:1;display:flex;flex-direction:column;gap:1px;cursor:pointer;user-select:none;min-width:0;}
+        .pos-title{font-weight:500;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .pos-sub{font-size:.7rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .koef-col{display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex-shrink:0;}
+        .koef-tag{display:inline-flex;align-items:center;padding:.12rem .42rem;border-radius:7px;font-size:.68rem;font-weight:600;white-space:nowrap;}
+        .koef-tag.koef-val{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0;}
+        .koef-tag.koef-ur{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;}
+        .koef-tag.koef-stat{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+        .emp-tag{font-size:.72rem;color:var(--text-secondary);white-space:nowrap;flex-shrink:0;}
+        .position-actions{display:flex;gap:.35rem;flex-shrink:0;}
+
+        /* ── TOAST ── */
+        .toast{position:fixed;bottom:calc(1.5rem + var(--safe-bottom));left:50%;transform:translateX(-50%);background:var(--primary);color:white;padding:.85rem 1.4rem;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:9999;font-size:.88rem;font-weight:500;white-space:nowrap;animation:toastIn .3s ease;}
+        body.mode-mobile .toast{bottom:calc(80px + var(--safe-bottom));}
+        @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+        /* Unit selector */
+        .unit-selector{margin:.75rem 0;padding:.9rem;background:var(--bg-main);border-radius:8px;}
+        .unit-selector label{display:block;margin-bottom:.45rem;font-weight:500;font-size:.9rem;}
+        .unit-selector select{width:100%;padding:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;-webkit-appearance:none;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right .75rem center;background-size:12px;}
+
+        /* Mobile FAB (quick add) */
+        .fab{display:none;position:fixed;bottom:calc(76px + var(--safe-bottom));right:1rem;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#1a1a1a;font-size:1.5rem;border:none;box-shadow:0 4px 16px rgba(212,175,55,.5);cursor:pointer;z-index:180;align-items:center;justify-content:center;transition:transform .2s;touch-action:manipulation;}
+        body.mode-mobile .fab{display:flex;}
+        .fab:active{transform:scale(.92);}
+
+        /* Pinch hint */
+        .pinch-hint{position:fixed;bottom:calc(130px + var(--safe-bottom));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:white;padding:.5rem 1rem;border-radius:20px;font-size:.78rem;z-index:500;pointer-events:none;opacity:0;transition:opacity .4s;white-space:nowrap;}
+        .pinch-hint.show{opacity:1;}
+
+        /* Mobile card adjustments */
+        @media (max-width: 600px) {
+            .node-card{min-width:200px;max-width:280px;padding:1rem;}
+            .node-title{font-size:1rem;}
+            .node-badge{font-size:.65rem;}
+            .btn-small{padding:.35rem .6rem;font-size:.75rem;}
+            .children{gap:1.25rem;}
+        }
+    </style>
+</head>
+<body class="mode-desktop">
+
+    <!-- PLATFORM SWITCHER MODAL -->
+    <div class="platform-modal" id="platformModal">
+        <div class="platform-sheet">
+            <h3>Odaberi prikaz</h3>
+            <div class="platform-options">
+                <button class="plat-btn" id="platDesktop" onclick="setPlatform('desktop')">
+                    <span>🖥️</span>
+                    <span class="plat-name">Desktop</span>
+                    <span class="plat-desc">Traka alata gore, scroll zoom</span>
+                </button>
+                <button class="plat-btn" id="platMobile" onclick="setPlatform('mobile')">
+                    <span>📱</span>
+                    <span class="plat-name">Android / iOS</span>
+                    <span class="plat-desc">Traka alata dole, pinch zoom</span>
+                </button>
+            </div>
+            <div style="margin-top:1rem;text-align:center;">
+                <button class="btn btn-secondary btn-small" onclick="closePlatformModal()" style="width:100%;padding:.7rem;">Otkaži</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-top">
+            <h1>🌲 ŠPD Unsko-Sanske Šume</h1>
+            <div style="display:flex;gap:.5rem;align-items:center;flex-shrink:0;">
+                <div class="sync-status"><div class="sync-indicator"></div><span id="syncStatus">Učitavanje...</span></div>
+                <button class="platform-badge" onclick="openPlatformModal()" title="Promijeni prikaz">
+                    <span id="platIcon">🖥️</span>
+                    <span id="platLabel">Desktop</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTROLS (desktop: top sticky | mobile: bottom fixed) -->
+    <div class="controls" id="controlsBar">
+        <div class="action-btns" style="display:flex;gap:.4rem;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-small" onclick="addRootUnit()">➕ <span class="hide-xs">Dodaj jedinicu</span></button>
+            <button class="btn btn-secondary btn-small" onclick="exportData()">💾 <span class="hide-xs">Spremi</span></button>
+            <button class="btn btn-secondary btn-small" onclick="importData()">📂 <span class="hide-xs">Učitaj</span></button>
+        </div>
+        <div class="zoom-btns" style="display:flex;gap:.4rem;align-items:center;">
+            <button class="btn btn-secondary btn-icon" onclick="zoomOut()" title="Smanji">➖</button>
+            <span class="zoom-level" id="zoomLabel">100%</span>
+            <button class="btn btn-secondary btn-icon" onclick="zoomIn()" title="Povećaj">➕</button>
+            <button class="btn btn-secondary btn-icon" onclick="resetZoom()" title="Reset">⟳</button>
+        </div>
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Pretraži...">
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="container" id="mainContainer">
+        <div id="outerScroll" style="overflow:auto;-webkit-overflow-scrolling:touch;">
+            <div id="zoomWrapper" style="transform-origin:top left;display:inline-block;min-width:100%;">
+                <div class="tree" id="orgTree"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAB (mobile) -->
+    <button class="fab" onclick="addRootUnit()" title="Dodaj jedinicu">➕</button>
+
+    <!-- Pinch hint -->
+    <div class="pinch-hint" id="pinchHint">🤏 Koristite dva prsta za zoom</div>
+
+    <!-- MODALS -->
+    <div class="modal" id="unitModal">
+        <div class="modal-content">
+            <div class="modal-header"><span id="modalTitle">Dodaj jedinicu</span><button class="close-btn" onclick="closeUnitModal()">×</button></div>
+            <form id="unitForm">
+                <div class="form-group"><label>Naziv jedinice *</label><input type="text" id="unitName" required autocomplete="off"></div>
+                <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeUnitModal()">Otkaži</button><button type="submit" class="btn btn-primary">Sačuvaj</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="positionModal">
+        <div class="modal-content">
+            <div class="modal-header"><span id="posModalTitle">Pozicije</span><button class="close-btn" onclick="closePositionModal()">×</button></div>
+            <div id="positionsList"></div>
+            <div class="modal-actions" style="flex-wrap:wrap;">
+                <button type="button" class="btn btn-primary btn-small" onclick="addPosition()">➕ Dodaj poziciju</button>
+                <button type="button" class="btn btn-secondary btn-small" onclick="movePositionToUnit()">↔️ Premjesti</button>
+                <button type="button" class="btn btn-secondary btn-small" onclick="closePositionModal()">Zatvori</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="moveModal">
+        <div class="modal-content">
+            <div class="modal-header"><span>Premjesti poziciju</span><button class="close-btn" onclick="closeMoveModal()">×</button></div>
+            <div class="unit-selector"><label>Odaberi odredišnu jedinicu:</label><select id="targetUnitSelect"></select></div>
+            <div style="margin:.75rem 0;padding:.85rem;background:#fffbeb;border-radius:8px;font-size:.88rem;"><strong>Pozicija:</strong> <span id="movingPositionName"></span></div>
+            <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeMoveModal()">Otkaži</button><button type="button" class="btn btn-primary" onclick="confirmMovePosition()">Premjesti</button></div>
+        </div>
+    </div>
+
+    <div class="modal" id="employeeModal">
+        <div class="modal-content">
+            <div class="modal-header"><span id="empModalTitle">Radnik</span><button class="close-btn" onclick="closeEmployeeModal()">×</button></div>
+            <form id="employeeForm">
+                <div class="form-group"><label>Ime radnika</label><input type="text" id="empName" placeholder="npr. Ime Prezime" autocomplete="off"></div>
+                <div class="form-group"><label>Stručna sprema</label><input type="text" id="empEducation" placeholder="npr. VSS – Inžinjer šumarstva" autocomplete="off"></div>
+                <div class="form-group"><label>Radno iskustvo</label><input type="text" id="empExperience" placeholder="npr. 10 godina" autocomplete="off"></div>
+                <div class="form-group"><label>Ostalo</label><textarea id="empOther" rows="4" placeholder="Napomene, certifikati, licence..."></textarea></div>
+                <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeEmployeeModal()">Otkaži</button><button type="submit" class="btn btn-primary">Sačuvaj</button></div>
+            </form>
+        </div>
+    </div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// GLOBALS
+// ════════════════════════════════════════════════════════════
+let organizationalStructure = {
+    id: 'root', name: 'ŠPD Unsko-Sanske Šume', level: 0,
+    children: [
+        { id: 'uprava', name: 'Uprava ŠPD-a', level: 1, children: [] },
+        { id: 'direkcija', name: 'Direkcija Društva', level: 1, children: [
+            { id: 'sektor-prip', name: 'Sektor pripreme proizvodnje', level: 2, children: [] },
+            { id: 'sektor-isk', name: 'Sektor iskorištavanja šuma', level: 2, children: [] },
+            { id: 'sektor-ured', name: 'Sektor uređivanja šuma', level: 2, children: [] },
+            { id: 'sektor-uzg', name: 'Sektor uzgajanje šuma i lovstvo', level: 2, children: [
+                { id: 'sluzba-posa', name: 'Služba za pošumljavanje i sjemenarstvo', level: 3, children: [] },
+                { id: 'sluzba-lovst', name: 'Služba za lovstvo i poljoprivredu', level: 3, children: [] }
+            ]},
+            { id: 'sektor-zast', name: 'Sektor integralne zaštite šuma', level: 2, children: [] },
+            { id: 'sektor-ekol', name: 'Sektor za ekologiju i zaštitne šume', level: 2, children: [] },
+            { id: 'sektor-ekon', name: 'Sektor ekonomskih poslova', level: 2, children: [
+                { id: 'sluzba-rach', name: 'Služba za računovodstvo', level: 3, children: [] },
+                { id: 'sluzba-fin', name: 'Služba za finansijske poslove', level: 3, children: [] },
+                { id: 'sluzba-kom', name: 'Služba za komercijalne poslove', level: 3, children: [] },
+                { id: 'sluzba-plan', name: 'Služba plana, analize i razvoja', level: 3, children: [] },
+                { id: 'odjelj-mfuk', name: 'Odjeljenje materijalno-finansijskog upravljanja i kontrole', level: 3, children: [] },
+                { id: 'odjelj-jav-nab', name: 'Odjeljenje za javne nabavke', level: 3, children: [] }
+            ]},
+            { id: 'sektor-prav', name: 'Sektor pravnih poslova', level: 2, children: [
+                { id: 'sluzba-imovin', name: 'Služba za imovinsko-pravne poslove', level: 3, children: [] },
+                { id: 'sluzba-kadrov', name: 'Služba za kadrovske i opće poslove', level: 3, children: [] },
+                { id: 'sluzba-zastita', name: 'Služba za zaštitu zaposlenika, imovine i PPZ', level: 3, children: [] }
+            ]},
+            { id: 'sektor-it', name: 'Sektor informatičkih poslova', level: 2, children: [
+                { id: 'odjelj-geo', name: 'Odjeljenje za geodetske poslove', level: 3, children: [] }
+            ]},
+            { id: 'odjelj-int-rev', name: 'Odjeljenje interne revizije', level: 2, children: [] },
+            { id: 'odjelj-int-kontr', name: 'Odjeljenje interne kontrole', level: 2, children: [] }
+        ]},
+        { id: 'pogoni-podruznice', name: 'Pogon i Podružnice', level: 1, children: [
+            { id: 'pogon-bkrupa', name: 'Pogon gospodarenja Bosanska Krupa', level: 2, children: [] },
+            { id: 'sum-bihac', name: 'Podružnica Šumarija Bihać', level: 2, children: [] },
+            { id: 'sum-cazin', name: 'Podružnica Šumarija Cazin', level: 2, children: [] },
+            { id: 'sum-kljuc', name: 'Podružnica Šumarija Ključ', level: 2, children: [] },
+            { id: 'sum-bpetrovac', name: 'Podružnica Šumarija Bosanski Petrovac', level: 2, children: [] },
+            { id: 'sum-smost', name: 'Podružnica Šumarija Sanski Most', level: 2, children: [] },
+            { id: 'rasadnik-cazin', name: 'Podružnica Rasadnik Cazin', level: 2, children: [] },
+            { id: 'gmo', name: 'Podružnica Građenje, mehanizacija i održavanje B. Petrovac', level: 2, children: [] }
+        ]}
+    ]
+}, orgPositions = {
+    'Uprava ŠPD-a': [
+        { title: 'Direktor – predsjednik Uprave', koef: null, usloviRada: 0, ukupno: null, stepen: 'U skladu sa članom 61. Statuta', napomena: 'Ugovor – član 56. stav (1) Statuta', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Izvršni direktor za oblast šumarstva – član Uprave', koef: null, usloviRada: 0, ukupno: null, stepen: 'U skladu sa članom 61. Statuta', napomena: 'Ugovor – član 56. stav (2) Statuta', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Izvršni direktor za oblast ekonomije – član Uprave', koef: null, usloviRada: 0, ukupno: null, stepen: 'U skladu sa članom 61. Statuta', napomena: 'Ugovor – Statut', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Izvršni direktor za oblast prava – član Uprave', koef: null, usloviRada: 0, ukupno: null, stepen: 'U skladu sa članom 61. Statuta', napomena: 'Ugovor – Statut', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Šef Ureda direktora', koef: 3.60, usloviRada: 0, ukupno: 3.60, stepen: 'VSS, VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Sekretar ŠPD-a', koef: 3.10, usloviRada: 0, ukupno: 3.10, stepen: 'U skladu sa članom 25. Statuta', napomena: 'Ugovor – član 25. stav (4) Statuta', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Sekretarica Uprave', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač direktora', koef: 2.09, usloviRada: 0, ukupno: 2.09, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač Direkcije – kat. B', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS/KV "B"', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač Direkcije – kat. D', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS/KV "D"', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Recepcionar', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Portir Direkcije', koef: 1.71, usloviRada: 0, ukupno: 1.71, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent informisanja', koef: 2.69, usloviRada: 0, ukupno: 2.69, stepen: 'VSS, VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Stručni saradnik za upravljanje promjenama i razvoj', koef: 3.20, usloviRada: 0, ukupno: 3.20, stepen: 'VSS, VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Stručni saradnik za razvoj i pripremu projekata', koef: 3.20, usloviRada: 0, ukupno: 3.20, stepen: 'VSS, VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Stručni saradnik za certificiranje', koef: 3.20, usloviRada: 0, ukupno: 3.20, stepen: 'VSS, VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Stručni saradnik za naučno-istraživački rad', koef: 3.20, usloviRada: 0, ukupno: 3.20, stepen: 'VSS, VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Evidentičar Direkcije', koef: 1.95, usloviRada: 0, ukupno: 1.95, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Magaciner Direkcije i Pogona gosp. Bos. Krupa', koef: 2.20, usloviRada: 0, ukupno: 2.20, stepen: 'VSS VII/1, 80-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Magaciner centralnog magacina', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Arhivar', koef: 1.95, usloviRada: 0, ukupno: 1.95, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent protokola', koef: 1.95, usloviRada: 0, ukupno: 1.95, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Domar-ložač-kurir', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'SSS/KV', napomena: 'Pravni sektor, Bihac, Pogon, B.Petrovac, S.Most', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Čistačica', koef: 1.50, usloviRada: 0, ukupno: 1.50, stepen: 'NK', napomena: 'Pravni sektor, Bihac, Pogon, B.Petr., S.Most, Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Upravitelj Radničkog doma', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/1, 80-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Konobar', koef: 1.71, usloviRada: 0, ukupno: 1.71, stepen: 'KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Domar-ložač (Radnički dom)', koef: 1.71, usloviRada: 0, ukupno: 1.71, stepen: 'KV', napomena: 'Ključ/Radnički dom', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Sektor pripreme proizvodnje': [
+        { title: 'Rukovodilac Sektora pripreme proizvodnje', koef: 3.60, usloviRada: 0, ukupno: 3.60, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vodeći projektant', koef: 3.20, usloviRada: 5, ukupno: 3.36, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u visokim šumama', koef: 3.00, usloviRada: 10, ukupno: 3.30, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Tehnolog za gospodarenje šumama', koef: 3.09, usloviRada: 5, ukupno: 3.24, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćni projektant', koef: 2.20, usloviRada: 10, ukupno: 2.42, stepen: 'VSS VII/180-300 ECTS', napomena: 'Sektor pripreme proizvodnje', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za putnu infrastrukturu i objekte', koef: 2.87, usloviRada: 0, ukupno: 2.87, stepen: 'VSS VII/1, 80-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za mehanizaciju', koef: 2.87, usloviRada: 0, ukupno: 2.87, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Operater', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'SSS', napomena: 'Sek. pripreme proiz.', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za administrativno-tehničke poslove', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: 'Sektor pripreme', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćni radnik', koef: 1.40, usloviRada: 10, ukupno: 1.54, stepen: 'NK', napomena: 'Sektor pripreme proizv.', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Sektor iskorištavanja šuma': [
+        { title: 'Rukovodilac Sektora iskorištavanja šuma', koef: 3.49, usloviRada: 0, ukupno: 3.49, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vođa Sekcije', koef: 3.03, usloviRada: 4, ukupno: 3.15, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Tehnolog za praćenje šumsko-gospodarskih osnova', koef: 2.80, usloviRada: 0, ukupno: 2.80, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Sektor uređivanja šuma': [
+        { title: 'Rukovodilac Sektora uređivanja šuma', koef: 3.60, usloviRada: 0, ukupno: 3.60, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant uređivanja šuma', koef: 2.79, usloviRada: 4, ukupno: 2.90, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant na procjeni šuma – taksator', koef: 2.01, usloviRada: 10, ukupno: 2.21, stepen: 'VSS VII/180-240 ECTS ili SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent kamionskih puteva i građevina – glavni inžinjer', koef: 2.69, usloviRada: 0, ukupno: 2.69, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za GIS', koef: 2.80, usloviRada: 0, ukupno: 2.80, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćni radnik', koef: 1.40, usloviRada: 10, ukupno: 1.54, stepen: 'NK', napomena: 'Sektor uređ. šuma', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Sektor uzgajanje šuma i lovstvo': [
+        { title: 'Rukovodilac Sektora uzgajanje šuma i lovstvo', koef: 3.49, usloviRada: 0, ukupno: 3.49, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent zaštite šuma', koef: 3.09, usloviRada: 0, ukupno: 3.09, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćni radnik', koef: 1.40, usloviRada: 10, ukupno: 1.54, stepen: 'NK', napomena: 'Sektor uzgajanje šuma', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Služba za pošumljavanje i sjemenarstvo': [
+        { title: 'Rukovodilac Službe za pošumljavanje i sjemenarstvo', koef: 3.00, usloviRada: 8, ukupno: 3.24, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za pošumljavanje i sjemenarstvo', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/1, 80-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Služba za lovstvo i poljoprivredu': [
+        { title: 'Rukovodilac Službe za lovstvo i poljoprivredu', koef: 3.00, usloviRada: 8, ukupno: 3.24, stepen: 'VSS VII/1, 80-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Sektor integralne zaštite šuma': [
+        { title: 'Rukovodilac Sektora integralne zaštite šuma', koef: 3.49, usloviRada: 0, ukupno: 3.49, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Sektor za ekologiju i zaštitne šume': [
+        { title: 'Rukovodilac Sektora za ekologiju i zaštitne šume', koef: 3.49, usloviRada: 0, ukupno: 3.49, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent ekologije i zaštitnih šuma', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/1, 80-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Limar-pomoćni radnik', koef: 1.67, usloviRada: 6, ukupno: 1.77, stepen: 'SSS', napomena: 'Sektor ekologije', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Plinski i vodoinstalater-pomoćni radnik', koef: 1.67, usloviRada: 6, ukupno: 1.77, stepen: 'SSS', napomena: 'Sektor ekologije', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Traktorista poljopr. traktora – pom. radnik', koef: 1.67, usloviRada: 6, ukupno: 1.77, stepen: 'KV/PK', napomena: 'Sektor ekologije', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Portir – pomoćni radnik', koef: 1.40, usloviRada: 0, ukupno: 1.40, stepen: 'SSS/NK', napomena: 'Sektor ekologije', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Sektor ekonomskih poslova': [
+        { title: 'Rukovodilac Sektora ekonomskih poslova', koef: 3.49, usloviRada: 0, ukupno: 3.49, stepen: 'VSS VII/240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Planer – analitičar', koef: 2.90, usloviRada: 0, ukupno: 2.90, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Operativni planer – statističar', koef: 2.00, usloviRada: 0, ukupno: 2.00, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Služba za računovodstvo': [
+        { title: 'Rukovodilac Službe za računovodstvo', koef: 3.29, usloviRada: 0, ukupno: 3.29, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Glavni knjigovođa', koef: 2.76, usloviRada: 0, ukupno: 2.76, stepen: 'VSS VII/180-240 ECTS ili VŠS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Konter – finansijski knjigovođa', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent likvidator i naplata', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/180-240 ECTS ili VŠS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Blagajnik – obračunski', koef: 2.09, usloviRada: 0, ukupno: 2.09, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa stalnih sredstava i osiguranja', koef: 2.00, usloviRada: 0, ukupno: 2.00, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa plaća', koef: 2.00, usloviRada: 0, ukupno: 2.00, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa dobavljača', koef: 2.00, usloviRada: 0, ukupno: 2.00, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa kupaca', koef: 2.00, usloviRada: 0, ukupno: 2.00, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa za obračun i evidenciju poreza', koef: 2.00, usloviRada: 0, ukupno: 2.00, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Služba za finansijske poslove': [
+        { title: 'Rukovodilac Službe za finansijske poslove', koef: 3.24, usloviRada: 0, ukupno: 3.24, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Kontrolor materijalno-finansijskog poslovanja – likvidator', koef: 2.89, usloviRada: 0, ukupno: 2.89, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent nabave', koef: 2.80, usloviRada: 0, ukupno: 2.80, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent fakturisanje', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Služba za komercijalne poslove': [
+        { title: 'Rukovodilac Službe za komercijalne poslove', koef: 3.24, usloviRada: 0, ukupno: 3.24, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent prodaje', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/180-240 ECTS ili VŠS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent prodaje sporednih proizvoda', koef: 2.40, usloviRada: 0, ukupno: 2.40, stepen: 'VSS VII/180-240 ECTS ili VŠS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Prodavač-obračunski-pomoćna blagajna-fakturista', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: 'Podruz. Cazin i Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Prodavač-obračunski pomoćna blagajna', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Služba plana, analize i razvoja': [
+        { title: 'Rukovodilac Službe plana, analize i razvoja', koef: 3.24, usloviRada: 0, ukupno: 3.24, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Odjeljenje materijalno-finansijskog upravljanja i kontrole': [
+        { title: 'Rukovodilac Odjeljenja mat.-finans. upravljanja i kontrole', koef: 3.20, usloviRada: 0, ukupno: 3.20, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Odjeljenje za javne nabavke': [
+        { title: 'Rukovodilac Odjeljenja za javne nabavke – Službenik za javne nabavke', koef: 3.20, usloviRada: 0, ukupno: 3.20, stepen: 'VSS VII/240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za javne nabavke', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Sektor pravnih poslova': [
+        { title: 'Rukovodilac Sektora pravnih poslova', koef: 3.49, usloviRada: 0, ukupno: 3.49, stepen: 'VSS VII/240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za zastupanje', koef: 2.89, usloviRada: 0, ukupno: 2.89, stepen: 'VSS VII/240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za pravne poslove', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/240 ECTS ili VŠS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Služba za imovinsko-pravne poslove': [
+        { title: 'Rukovodilac Službe za imovinsko-pravne poslove', koef: 3.26, usloviRada: 0, ukupno: 3.26, stepen: 'VSS VII/240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za geodetske poslove (SSS)', koef: 2.17, usloviRada: 0, ukupno: 2.17, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Služba za kadrovske i opće poslove': [
+        { title: 'Rukovodilac Službe za kadrovske i opće poslove', koef: 3.24, usloviRada: 0, ukupno: 3.24, stepen: 'VSS VII/240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent radnih odnosa', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Služba za zaštitu zaposlenika, imovine i PPZ': [
+        { title: 'Rukovodilac Službe za zaštitu zaposlenika, imovine i PPZ', koef: 2.90, usloviRada: 0, ukupno: 2.90, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent zaštite na radu', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/1, 80-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent PPZ', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'VSS VII/1, 80 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Sektor informatičkih poslova': [
+        { title: 'Rukovodilac Sektora informatičkih poslova', koef: 3.40, usloviRada: 0, ukupno: 3.40, stepen: 'VSS VII/240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Informatičar – programer', koef: 2.80, usloviRada: 0, ukupno: 2.80, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Informatičar – tehničar', koef: 2.20, usloviRada: 0, ukupno: 2.20, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Odjeljenje za geodetske poslove': [
+        { title: 'Rukovodilac Odjeljenja za geodetske poslove', koef: 3.20, usloviRada: 0, ukupno: 3.20, stepen: 'VSS VII/180-240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Geometar', koef: 2.17, usloviRada: 6, ukupno: 2.30, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za geodetske poslove', koef: 2.17, usloviRada: 0, ukupno: 2.17, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Operater', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'SSS', napomena: 'Odjeljenje za geodetske poslove', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Odjeljenje interne revizije': [
+        { title: 'Direktor Odjela interne revizije', koef: null, usloviRada: 0, ukupno: null, stepen: 'VSS VII/240 ECTS', napomena: 'Ugovor – član 80. Statuta', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Rukovodilac jedinice za internu reviziju – Glavni interni revizor', koef: 3.40, usloviRada: 0, ukupno: 3.40, stepen: 'VSS VII/240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Interni revizor', koef: 3.20, usloviRada: 0, ukupno: 3.20, stepen: 'VSS VII/240 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Odjeljenje interne kontrole': [
+        { title: 'Rukovodilac Odjeljenja interne kontrole', koef: 3.20, usloviRada: 0, ukupno: 3.20, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Pogon gospodarenja Bosanska Krupa': [
+        { title: 'Upravnik Pogona gosp. Bosanska Krupa', koef: 3.81, usloviRada: 0, ukupno: 3.81, stepen: 'VSS VII/2, 40-300 ECTS', napomena: 'Bihac, S.Most, Pogon i Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćnik upravnika', koef: 3.24, usloviRada: 0, ukupno: 3.24, stepen: 'VSS VII/240-300 ECTS', napomena: 'Bihac, B.Petrov., S.Most, Pogon, Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa iskorištavanja šuma', koef: 2.16, usloviRada: 6, ukupno: 2.29, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa uzgoja, zaštite šuma i ekologije', koef: 2.07, usloviRada: 6, ukupno: 2.20, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa vlastite režije', koef: 2.07, usloviRada: 6, ukupno: 2.20, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Tehnički kontrolor', koef: 2.11, usloviRada: 4, ukupno: 2.20, stepen: 'VSS VII/180 ECTS / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u visokim šumama', koef: 3.00, usloviRada: 10, ukupno: 3.30, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u izdanačkim šumama', koef: 2.09, usloviRada: 10, ukupno: 2.30, stepen: 'VSS VII/180-240 ECTS / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Primač na šuma-panju', koef: 2.10, usloviRada: 10, ukupno: 2.31, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Otpremač drvnih sortimenata', koef: 1.95, usloviRada: 5, ukupno: 2.05, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Radnik u primci', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Osmatrač šuma i šumskog zemljišta', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Lovočuvar', koef: 1.62, usloviRada: 6, ukupno: 1.72, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Traktorista – pomoćni radnik', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'KV/PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Sjekač', koef: 1.64, usloviRada: 10, ukupno: 1.81, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Uzgojni radnik', koef: 1.56, usloviRada: 10, ukupno: 1.71, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa mehanizacije i transporta', koef: 2.09, usloviRada: 0, ukupno: 2.09, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa održavanja mašina i vozila', koef: 2.09, usloviRada: 0, ukupno: 2.09, stepen: 'SSS/VKV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa šumarske radionice', koef: 2.09, usloviRada: 0, ukupno: 2.09, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Mehaničar motornih pila', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'KV', napomena: 'Pogon', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Automehaničar', koef: 1.81, usloviRada: 6, ukupno: 1.91, stepen: 'KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Autoelektričar – mehaničar', koef: 1.81, usloviRada: 6, ukupno: 1.91, stepen: 'KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Bravar – mehaničar', koef: 1.81, usloviRada: 6, ukupno: 1.91, stepen: 'KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Tokar – mehaničar', koef: 1.81, usloviRada: 6, ukupno: 1.91, stepen: 'KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vulkanizer – mehaničar – pom. radnik', koef: 1.81, usloviRada: 6, ukupno: 1.91, stepen: 'KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Rukovač radnih mašina', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač teretnog vozila', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač-pomoćni radnik – kat. B', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS/KV "B"', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač-pomoćni radnik – kat. D', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS/KV "D"', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač-vatrogasac-pomoćni radnik', koef: 1.68, usloviRada: 10, ukupno: 1.85, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Administrativni radnik – operater', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Evidentičar', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Terenski operativac', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa mat. i pogonskog knjigovodstva', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: 'Pogon/Podr. B.Petrovac, Bihac, S.Most i GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Portir – pomoćni radnik', koef: 1.62, usloviRada: 0, ukupno: 1.62, stepen: 'SSS/NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Domar-ložač-kurir', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Čistačica', koef: 1.50, usloviRada: 0, ukupno: 1.50, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćni radnik', koef: 1.40, usloviRada: 10, ukupno: 1.54, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Podružnica Šumarija Bihać': [
+        { title: 'Upravnik Podružnice', koef: 3.81, usloviRada: 0, ukupno: 3.81, stepen: 'VSS VII/2, 40-300 ECTS', napomena: 'Bihac, S.Most, Pogon i Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćnik upravnika', koef: 3.24, usloviRada: 0, ukupno: 3.24, stepen: 'VSS VII/240-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa iskorištavanja šuma', koef: 2.16, usloviRada: 6, ukupno: 2.29, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa uzgoja, zaštite šuma i ekologije', koef: 2.07, usloviRada: 6, ukupno: 2.20, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa vlastite režije', koef: 2.07, usloviRada: 6, ukupno: 2.20, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u visokim šumama', koef: 3.00, usloviRada: 10, ukupno: 3.30, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u izdanačkim šumama', koef: 2.09, usloviRada: 10, ukupno: 2.30, stepen: 'VSS VII/180-240 ECTS / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Primač na šuma-panju', koef: 2.10, usloviRada: 10, ukupno: 2.31, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Otpremač drvnih sortimenata', koef: 1.95, usloviRada: 5, ukupno: 2.05, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Radnik u primci', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Osmatrač šuma i šumskog zemljišta', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Lovočuvar', koef: 1.62, usloviRada: 6, ukupno: 1.72, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Traktorista – pomoćni radnik', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'KV/PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Sjekač', koef: 1.64, usloviRada: 10, ukupno: 1.81, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Uzgojni radnik', koef: 1.56, usloviRada: 10, ukupno: 1.71, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Automehaničar', koef: 1.81, usloviRada: 6, ukupno: 1.91, stepen: 'KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Administrativni radnik – operater', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Evidentičar', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač-pomoćni radnik – kat. B', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS/KV "B"', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač-pomoćni radnik – kat. D', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS/KV "D"', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Portir – pomoćni radnik', koef: 1.62, usloviRada: 0, ukupno: 1.62, stepen: 'SSS/NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Domar-ložač-kurir', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Čistačica', koef: 1.50, usloviRada: 0, ukupno: 1.50, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćni radnik', koef: 1.40, usloviRada: 10, ukupno: 1.54, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Magaciner', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'SSS', napomena: 'Bihac, B.Petrovac', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa mat. i pogonskog knjigovodstva', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Podružnica Šumarija Cazin': [
+        { title: 'Upravnik Podružnice Šumarija Cazin', koef: 3.52, usloviRada: 0, ukupno: 3.52, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćnik upravnika', koef: 3.05, usloviRada: 0, ukupno: 3.05, stepen: 'VSS VII/240-300 ECTS', napomena: 'Cazin i GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa iskorištavanja šuma', koef: 2.16, usloviRada: 6, ukupno: 2.29, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa uzgoja, zaštite šuma i ekologije', koef: 2.07, usloviRada: 6, ukupno: 2.20, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Primač na šuma-panju', koef: 2.10, usloviRada: 10, ukupno: 2.31, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Otpremač drvnih sortimenata', koef: 1.95, usloviRada: 5, ukupno: 2.05, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Lovočuvar', koef: 1.62, usloviRada: 6, ukupno: 1.72, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Traktorista – pomoćni radnik', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'KV/PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Sjekač', koef: 1.64, usloviRada: 10, ukupno: 1.81, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Uzgojni radnik', koef: 1.56, usloviRada: 10, ukupno: 1.71, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Prodavač-obračunski-pomoćna blagajna-fakturista', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: 'Cazin i Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Admin. radnik – evidentičar – operater', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: 'Rasadnik, Cazin, GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač – magaciner – pomoćni radnik', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS/KV', napomena: 'Cazin', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Portir – pomoćni radnik', koef: 1.62, usloviRada: 0, ukupno: 1.62, stepen: 'SSS/NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Čistačica – kurir', koef: 1.50, usloviRada: 0, ukupno: 1.50, stepen: 'NK', napomena: 'Cazin, Rasadnik', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćni radnik', koef: 1.40, usloviRada: 10, ukupno: 1.54, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa mat. i pogonskog knjigovodstva', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: 'Cazin (sa Rasadnikom), Ključ', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Podružnica Šumarija Ključ': [
+        { title: 'Upravnik Podružnice', koef: 3.81, usloviRada: 0, ukupno: 3.81, stepen: 'VSS VII/2, 40-300 ECTS', napomena: 'Bihac, S.Most, Pogon i Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćnik upravnika', koef: 3.24, usloviRada: 0, ukupno: 3.24, stepen: 'VSS VII/240-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa iskorištavanja šuma', koef: 2.16, usloviRada: 6, ukupno: 2.29, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa uzgoja, zaštite šuma i ekologije', koef: 2.07, usloviRada: 6, ukupno: 2.20, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u visokim šumama', koef: 3.00, usloviRada: 10, ukupno: 3.30, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u izdanačkim šumama', koef: 2.09, usloviRada: 10, ukupno: 2.30, stepen: 'VSS VII/180-240 ECTS / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Primač na šuma-panju', koef: 2.10, usloviRada: 10, ukupno: 2.31, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Otpremač drvnih sortimenata', koef: 1.95, usloviRada: 5, ukupno: 2.05, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Radnik u primci', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Lovočuvar', koef: 1.62, usloviRada: 6, ukupno: 1.72, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Traktorista – pomoćni radnik', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'KV/PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Sjekač', koef: 1.64, usloviRada: 10, ukupno: 1.81, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Uzgojni radnik', koef: 1.56, usloviRada: 10, ukupno: 1.71, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Prodavač-obračunski-pomoćna blagajna-fakturista', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: 'Cazin i Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Administrativni radnik – operater', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Domar-ložač-kurir-magaciner', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS/KV', napomena: 'Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Domar-ložač', koef: 1.71, usloviRada: 0, ukupno: 1.71, stepen: 'KV', napomena: 'Ključ/Radnički dom', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Kuhar', koef: 1.71, usloviRada: 0, ukupno: 1.71, stepen: 'KV', napomena: 'Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Portir – pomoćni radnik', koef: 1.62, usloviRada: 0, ukupno: 1.62, stepen: 'SSS/NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Čistačica', koef: 1.50, usloviRada: 0, ukupno: 1.50, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćni radnik', koef: 1.40, usloviRada: 10, ukupno: 1.54, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Osmatrač šuma i šumskog zemljišta', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa mat. i pogonskog knjigovodstva', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Podružnica Šumarija Bosanski Petrovac': [
+        { title: 'Upravnik Podružnice Bosanski Petrovac', koef: 4.00, usloviRada: 0, ukupno: 4.00, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćnik upravnika', koef: 3.24, usloviRada: 0, ukupno: 3.24, stepen: 'VSS VII/240-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa iskorištavanja šuma', koef: 2.16, usloviRada: 6, ukupno: 2.29, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa uzgoja, zaštite šuma i ekologije', koef: 2.07, usloviRada: 6, ukupno: 2.20, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u visokim šumama', koef: 3.00, usloviRada: 10, ukupno: 3.30, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u izdanačkim šumama', koef: 2.09, usloviRada: 10, ukupno: 2.30, stepen: 'VSS VII/180-240 ECTS / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Primač na šuma-panju', koef: 2.10, usloviRada: 10, ukupno: 2.31, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Otpremač drvnih sortimenata', koef: 1.95, usloviRada: 5, ukupno: 2.05, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Radnik u primci', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Lovočuvar', koef: 1.62, usloviRada: 6, ukupno: 1.72, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Traktorista – pomoćni radnik', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'KV/PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Sjekač', koef: 1.64, usloviRada: 10, ukupno: 1.81, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Uzgojni radnik', koef: 1.56, usloviRada: 10, ukupno: 1.71, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Administrativni radnik – operater', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Domar-ložač-kurir', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Portir – pomoćni radnik', koef: 1.62, usloviRada: 0, ukupno: 1.62, stepen: 'SSS/NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Čistačica', koef: 1.50, usloviRada: 0, ukupno: 1.50, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćni radnik', koef: 1.40, usloviRada: 10, ukupno: 1.54, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Osmatrač šuma i šumskog zemljišta', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Magaciner', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'SSS', napomena: 'Bihac, B.Petrovac', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa mat. i pogonskog knjigovodstva', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Podružnica Šumarija Sanski Most': [
+        { title: 'Upravnik Podružnice', koef: 3.81, usloviRada: 0, ukupno: 3.81, stepen: 'VSS VII/2, 40-300 ECTS', napomena: 'Bihac, S.Most, Pogon i Ključ', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćnik upravnika', koef: 3.24, usloviRada: 0, ukupno: 3.24, stepen: 'VSS VII/240-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa iskorištavanja šuma', koef: 2.16, usloviRada: 6, ukupno: 2.29, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa uzgoja, zaštite šuma i ekologije', koef: 2.07, usloviRada: 6, ukupno: 2.20, stepen: 'VSS VII/180 / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u visokim šumama', koef: 3.00, usloviRada: 10, ukupno: 3.30, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Projektant u izdanačkim šumama', koef: 2.09, usloviRada: 10, ukupno: 2.30, stepen: 'VSS VII/180-240 ECTS / SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Primač na šuma-panju', koef: 2.10, usloviRada: 10, ukupno: 2.31, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Otpremač drvnih sortimenata', koef: 1.95, usloviRada: 5, ukupno: 2.05, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Radnik u primci', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Lovočuvar', koef: 1.62, usloviRada: 6, ukupno: 1.72, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Traktorista – pomoćni radnik', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'KV/PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Sjekač', koef: 1.64, usloviRada: 10, ukupno: 1.81, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Uzgojni radnik', koef: 1.56, usloviRada: 10, ukupno: 1.71, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Magaciner – mehaničar motornih pila', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS / KV', napomena: 'Sanski Most', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Administrativni radnik – operater', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Domar-ložač-kurir', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Portir – pomoćni radnik', koef: 1.62, usloviRada: 0, ukupno: 1.62, stepen: 'SSS/NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Čistačica', koef: 1.50, usloviRada: 0, ukupno: 1.50, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćni radnik', koef: 1.40, usloviRada: 10, ukupno: 1.54, stepen: 'NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Osmatrač šuma i šumskog zemljišta', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa mat. i pogonskog knjigovodstva', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Podružnica Rasadnik Cazin': [
+        { title: 'Upravnik Podružnice Rasadnik Cazin', koef: 3.33, usloviRada: 0, ukupno: 3.33, stepen: 'VSS VII/2, 40-300 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćnik upravnika', koef: 2.76, usloviRada: 0, ukupno: 2.76, stepen: 'VSS VII/240-300 ECTS', napomena: 'Rasadnik Cazin', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent za organizaciju proizvodnje', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/180-240 ECTS', napomena: 'Rasadnik', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa za rasadničku proizvodnju i sjemenarstvo', koef: 2.09, usloviRada: 0, ukupno: 2.09, stepen: 'SSS', napomena: 'Rasadnik Cazin', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa za hortikulturnu proizvodnju – magaciner', koef: 2.09, usloviRada: 0, ukupno: 2.09, stepen: 'SSS', napomena: 'Rasadnik', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Mehaničar – vozač', koef: 1.75, usloviRada: 10, ukupno: 1.92, stepen: 'KV', napomena: 'Rasadnik', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Traktorista – pomoćni radnik', koef: 1.67, usloviRada: 6, ukupno: 1.77, stepen: 'KV/PK', napomena: 'Rasadnik', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Rasadničar – pomoćni radnik', koef: 1.54, usloviRada: 10, ukupno: 1.69, stepen: 'PK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Admin. radnik – evidentičar – operater', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: 'Rasadnik', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Portir – pomoćni radnik', koef: 1.62, usloviRada: 0, ukupno: 1.62, stepen: 'SSS/NK', napomena: 'Rasadnik', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Čistačica – kurir', koef: 1.50, usloviRada: 0, ukupno: 1.50, stepen: 'NK', napomena: 'Cazin, Rasadnik', employee: { name:'', education:'', experience:'', other:'' } }
+    ],
+    'Podružnica Građenje, mehanizacija i održavanje B. Petrovac': [
+        { title: 'Upravnik Podružnice GMO', koef: 3.43, usloviRada: 0, ukupno: 3.43, stepen: 'VSS VII/2, 40-300 ECTS', napomena: 'Gradenje, mehanizac. i odrzavanje', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćnik upravnika', koef: 3.05, usloviRada: 0, ukupno: 3.05, stepen: 'VSS VII/240-300 ECTS', napomena: 'GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Tehnički rukovodilac kamenoloma', koef: 2.60, usloviRada: 0, ukupno: 2.60, stepen: 'VSS VII/180-240 ECTS', napomena: 'GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa niske gradnje', koef: 2.09, usloviRada: 0, ukupno: 2.09, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa visoke gradnje', koef: 2.89, usloviRada: 0, ukupno: 2.89, stepen: 'SSS / VSS 180 ECTS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Rukovač separacije – otpremač – bravar', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'KV', napomena: 'GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Rukovač radnih mašina', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Vozač teretnog vozila', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS/KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Automehaničar', koef: 1.81, usloviRada: 6, ukupno: 1.91, stepen: 'KV', napomena: 'GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Otpremač – preuzimač – pomoćni radnik', koef: 1.71, usloviRada: 6, ukupno: 1.81, stepen: 'KV', napomena: 'GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Građevinar', koef: 1.67, usloviRada: 6, ukupno: 1.77, stepen: 'NK, PK, KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Tesar-zidar-bravar-viljuškarista', koef: 1.67, usloviRada: 6, ukupno: 1.77, stepen: 'KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Referent građevinske operative', koef: 2.00, usloviRada: 0, ukupno: 2.00, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Magaciner – radnik na pumpi', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: 'GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Admin. radnik – evidentičar – operater', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: 'GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Portir – pomoćni radnik', koef: 1.62, usloviRada: 0, ukupno: 1.62, stepen: 'SSS/NK', napomena: 'GMO', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Poslovođa stolarske radione', koef: 2.20, usloviRada: 0, ukupno: 2.20, stepen: 'VŠS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Rukovač brentom i stolarskim mašinama', koef: 1.81, usloviRada: 6, ukupno: 1.91, stepen: 'KV', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Pomoćnik rukovaoca brentom i stolar. mašinama', koef: 1.62, usloviRada: 0, ukupno: 1.62, stepen: 'PK/NK', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Rukovač CNC mašine – programer', koef: 1.81, usloviRada: 0, ukupno: 1.81, stepen: 'SSS', napomena: '', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Magaciner', koef: 1.76, usloviRada: 0, ukupno: 1.76, stepen: 'SSS', napomena: 'Bihac, B.Petrovac', employee: { name:'', education:'', experience:'', other:'' } },
+        { title: 'Knjigovođa mat. i pogonskog knjigovodstva', koef: 1.90, usloviRada: 0, ukupno: 1.90, stepen: 'SSS', napomena: 'GMO', employee: { name:'', education:'', experience:'', other:'' } }
+    ]
+};
+const STORAGE_KEY = 'org_structure_data_v3';
+let currentEditNode = null, currentParentNode = null;
+let currentUnitForPositions = null, selectedPosition = null;
+let draggedPositionIndex = null;
+let currentEmployeeCtx = { unitName: null, index: null };
+
+// Zoom state
+let currentZoom = 1;
+const ZOOM_MIN = 0.3, ZOOM_MAX = 3, ZOOM_STEP = 0.15;
+
+// Platform
+let currentPlatform = 'desktop';
+
+// Touch pan/pinch state
+let isPinching = false, isPointerDown = false;
+let lastPinchDist = 0;
+let panStartX = 0, panStartY = 0;
+let scrollStartX = 0, scrollStartY = 0;
+
+// ════════════════════════════════════════════════════════════
+// PLATFORM SWITCHER
+// ════════════════════════════════════════════════════════════
+function openPlatformModal() { document.getElementById('platformModal').classList.add('active'); updatePlatformUI(); }
+function closePlatformModal() { document.getElementById('platformModal').classList.remove('active'); }
+function setPlatform(plat) {
+    currentPlatform = plat;
+    document.body.className = 'mode-' + plat;
+    document.getElementById('platIcon').textContent = plat === 'mobile' ? '📱' : '🖥️';
+    document.getElementById('platLabel').textContent = plat === 'mobile' ? 'Mobitel' : 'Desktop';
+    // Update active state in modal buttons
+    document.getElementById('platDesktop').classList.toggle('active', plat === 'desktop');
+    document.getElementById('platMobile').classList.toggle('active', plat === 'mobile');
+    closePlatformModal();
+    // Show pinch hint briefly on mobile
+    if (plat === 'mobile') showPinchHint();
+    localStorage.setItem('spd_platform', plat);
+    updateHeaderHeight();
+}
+function updatePlatformUI() {
+    document.getElementById('platDesktop').classList.toggle('active', currentPlatform === 'desktop');
+    document.getElementById('platMobile').classList.toggle('active', currentPlatform === 'mobile');
+}
+function showPinchHint() {
+    const h = document.getElementById('pinchHint');
+    h.classList.add('show');
+    setTimeout(() => h.classList.remove('show'), 2800);
+}
+function updateHeaderHeight() {
+    const hdr = document.querySelector('.header');
+    const headerH = hdr ? hdr.offsetHeight : 88;
+    document.documentElement.style.setProperty('--header-h', headerH + 'px');
+}
+
+// ════════════════════════════════════════════════════════════
+// ZOOM
+// ════════════════════════════════════════════════════════════
+function applyZoom(z, pivotX, pivotY) {
+    const wrapper = document.getElementById('zoomWrapper');
+    const outer = document.getElementById('outerScroll');
+    const oldZoom = currentZoom;
+    currentZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+    wrapper.style.transform = `scale(${currentZoom})`;
+    wrapper.style.transformOrigin = 'top left';
+    document.getElementById('zoomLabel').textContent = Math.round(currentZoom * 100) + '%';
+
+    // Adjust scroll to keep pivot point stable
+    if (pivotX !== undefined && outer) {
+        const ratio = currentZoom / oldZoom;
+        outer.scrollLeft = (outer.scrollLeft + pivotX) * ratio - pivotX;
+        outer.scrollTop  = (outer.scrollTop  + pivotY) * ratio - pivotY;
+    }
+}
+function zoomIn()    { applyZoom(currentZoom + ZOOM_STEP); }
+function zoomOut()   { applyZoom(currentZoom - ZOOM_STEP); }
+function resetZoom() { applyZoom(1); document.getElementById('outerScroll').scrollTo(0, 0); }
+
+// Desktop: Ctrl+Scroll zoom
+document.addEventListener('wheel', e => {
+    if (e.ctrlKey) {
+        e.preventDefault();
+        const outer = document.getElementById('outerScroll');
+        const rect  = outer.getBoundingClientRect();
+        const px = e.clientX - rect.left;
+        const py = e.clientY - rect.top;
+        applyZoom(currentZoom + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP), px, py);
+    }
+}, { passive: false });
+
+// ════════════════════════════════════════════════════════════
+// TOUCH EVENTS — Pinch zoom + Pan (mobile mode)
+// ════════════════════════════════════════════════════════════
+function getTouchDist(t1, t2) {
+    return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+}
+function getTouchMidpoint(t1, t2) {
+    return { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+}
+
+const outerEl = () => document.getElementById('outerScroll');
+
+document.addEventListener('touchstart', e => {
+    if (currentPlatform !== 'mobile') return;
+    const touches = e.touches;
+    if (touches.length === 2) {
+        isPinching = true;
+        isPointerDown = false;
+        lastPinchDist = getTouchDist(touches[0], touches[1]);
+        e.preventDefault();
+    } else if (touches.length === 1) {
+        isPinching = false;
+        isPointerDown = true;
+        const el = document.getElementById('zoomWrapper');
+        // Only pan if touching the tree area
+        if (e.target.closest('#outerScroll')) {
+            panStartX = touches[0].clientX;
+            panStartY = touches[0].clientY;
+            scrollStartX = outerEl().scrollLeft;
+            scrollStartY = outerEl().scrollTop;
+        }
+    }
+}, { passive: false });
+
+document.addEventListener('touchmove', e => {
+    if (currentPlatform !== 'mobile') return;
+    const touches = e.touches;
+    if (isPinching && touches.length === 2) {
+        e.preventDefault();
+        const dist = getTouchDist(touches[0], touches[1]);
+        const mid  = getTouchMidpoint(touches[0], touches[1]);
+        const outer = outerEl();
+        const rect = outer.getBoundingClientRect();
+        const px = mid.x - rect.left;
+        const py = mid.y - rect.top;
+        const scale = dist / lastPinchDist;
+        applyZoom(currentZoom * scale, px, py);
+        lastPinchDist = dist;
+    } else if (isPointerDown && touches.length === 1 && !e.target.closest('.modal')) {
+        e.preventDefault();
+        const dx = panStartX - touches[0].clientX;
+        const dy = panStartY - touches[0].clientY;
+        outerEl().scrollLeft = scrollStartX + dx;
+        outerEl().scrollTop  = scrollStartY + dy;
+    }
+}, { passive: false });
+
+document.addEventListener('touchend', e => {
+    if (e.touches.length < 2) isPinching = false;
+    if (e.touches.length === 0) isPointerDown = false;
+});
+
+// ════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════
+function posTitle_(p) { if (typeof p === 'string') return p; if (p && typeof p === 'object') return String(p.title || p.name || ''); return ''; }
+function posEmployee_(p) {
+    if (!p || typeof p !== 'object') return null;
+    if (!p.employee || typeof p.employee !== 'object') p.employee = { name:'', education:'', experience:'', other:'' };
+    else { p.employee.name = p.employee.name||''; p.employee.education = p.employee.education||''; p.employee.experience = p.employee.experience||''; p.employee.other = p.employee.other||''; }
+    return p.employee;
+}
+function ensurePosObject_(unitName, index) {
+    if (!orgPositions[unitName]) orgPositions[unitName] = [];
+    let p = orgPositions[unitName][index];
+    if (typeof p === 'string') { p = { title: p, employee: { name:'', education:'', experience:'', other:'' } }; orgPositions[unitName][index] = p; }
+    else if (p && typeof p === 'object') { p.title = String(p.title || p.name || ''); posEmployee_(p); }
+    return orgPositions[unitName][index];
+}
+function setSaveStatus(msg) { const el = document.getElementById('syncStatus'); if (el) el.textContent = msg; }
+function showToast(msg) {
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+}
+
+// ════════════════════════════════════════════════════════════
+// LOAD / SAVE
+// ════════════════════════════════════════════════════════════
+async function loadData() {
+    const isGAS = (typeof google !== 'undefined' && google.script && google.script.run);
+    if (isGAS) {
+        setSaveStatus('Učitavanje...');
+        google.script.run
+            .withSuccessHandler(r => {
+                try { if (r && r.ok && r.schema) { organizationalStructure = r.schema.organizationalStructure; orgPositions = r.schema.orgPositions || {}; } } catch(e) {}
+                renderTree(); setSaveStatus('Spremno');
+            })
+            .withFailureHandler(err => {
+                console.error(err); setSaveStatus('Greška');
+                try { const s = localStorage.getItem(STORAGE_KEY+'_structure'); const p = localStorage.getItem(STORAGE_KEY+'_positions'); if(s) organizationalStructure = JSON.parse(s); if(p) orgPositions = JSON.parse(p); } catch(e) {}
+                renderTree();
+            }).getSchema();
+        return;
+    }
+    try { const s = localStorage.getItem(STORAGE_KEY+'_structure'); const p = localStorage.getItem(STORAGE_KEY+'_positions'); if(s) organizationalStructure = JSON.parse(s); if(p) orgPositions = JSON.parse(p); } catch(e) {}
+    renderTree(); setSaveStatus('Offline');
+}
+async function saveData() {
+    const isGAS = (typeof google !== 'undefined' && google.script && google.script.run);
+    try {
+        setSaveStatus('Spremanje...');
+        if (isGAS) {
+            await new Promise((res, rej) => { google.script.run.withSuccessHandler(() => { setSaveStatus('Spremno'); res(); }).withFailureHandler(e => { setSaveStatus('Greška'); rej(e); }).saveSchema({ organizationalStructure, orgPositions }); });
+            return;
+        }
+        localStorage.setItem(STORAGE_KEY+'_structure', JSON.stringify(organizationalStructure));
+        localStorage.setItem(STORAGE_KEY+'_positions', JSON.stringify(orgPositions));
+        setSaveStatus('Offline');
+    } catch(e) { setSaveStatus('Greška'); }
+}
+
+// ════════════════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════════════════
+function renderTree() {
+    const c = document.getElementById('orgTree'); if (!c) return;
+    c.innerHTML = '';
+    if (!organizationalStructure) { c.innerHTML = '<p style="color:#666;text-align:center;padding:2rem;">Učitavanje...</p>'; return; }
+    c.appendChild(createNodeElement(organizationalStructure));
+}
+function createNodeElement(node) {
+    const nd = document.createElement('div'); nd.className = 'tree-node'; nd.dataset.nodeId = node.id;
+    const card = document.createElement('div'); card.className = `node-card level-${node.level}`;
+    const title = document.createElement('div'); title.className = 'node-title'; title.textContent = node.name; card.appendChild(title);
+    const positions = orgPositions[node.name] || [];
+    if (positions.length > 0) {
+        const prev = document.createElement('div'); prev.className = 'positions-preview';
+        prev.textContent = `📋 ${positions.length} pozicija`;
+        prev.onclick = e => { e.stopPropagation(); showPositions(node); }; card.appendChild(prev);
+        const badge = document.createElement('span'); badge.className = 'node-badge'; badge.textContent = positions.length; card.appendChild(badge);
+    }
+    const actions = document.createElement('div'); actions.className = 'node-actions';
+    const btns = [
+        ['✏️ Uredi', 'btn-secondary', () => editUnit(node)],
+        ['➕ Podređena', 'btn-primary', () => addChildUnit(node)],
+        ['👥 Pozicije', 'btn-secondary', () => showPositions(node)]
+    ];
+    btns.forEach(([html, cls, fn]) => {
+        const b = document.createElement('button'); b.className = `btn ${cls} btn-small`; b.innerHTML = html;
+        b.onclick = e => { e.stopPropagation(); fn(); }; actions.appendChild(b);
+    });
+    if (node.id !== 'uprava') {
+        const db = document.createElement('button'); db.className = 'btn btn-danger btn-small'; db.innerHTML = '🗑️';
+        db.onclick = e => { e.stopPropagation(); deleteUnit(node); }; actions.appendChild(db);
+    }
+    card.appendChild(actions); nd.appendChild(card);
+    if (node.children && node.children.length > 0) {
+        const con = document.createElement('div'); con.className = 'connector'; nd.appendChild(con);
+        const ch = document.createElement('div'); ch.className = 'children';
+        node.children.forEach(c => ch.appendChild(createNodeElement(c)));
+        nd.appendChild(ch);
+    }
+    return nd;
+}
+
+// ════════════════════════════════════════════════════════════
+// UNIT CRUD
+// ════════════════════════════════════════════════════════════
+function addRootUnit()      { currentEditNode = null; currentParentNode = organizationalStructure; openUnitModal('Dodaj novu jedinicu'); }
+function addChildUnit(pn)   { currentEditNode = null; currentParentNode = pn; openUnitModal('Dodaj podređenu jedinicu'); }
+function editUnit(node)     { currentEditNode = node; currentParentNode = null; document.getElementById('unitName').value = node.name; openUnitModal('Uredi jedinicu'); }
+function deleteUnit(node)   {
+    if (!confirm(`Obrisati "${node.name}"?\n\nOvo briše i sve podređene jedinice i pozicije.`)) return;
+    delete orgPositions[node.name];
+    function rem(p) { if (!p.children) return false; const i = p.children.findIndex(c => c.id === node.id); if (i !== -1) { p.children.splice(i, 1); return true; } for (let c of p.children) if (rem(c)) return true; return false; }
+    rem(organizationalStructure); saveData(); renderTree(); showToast('Jedinica obrisana');
+}
+function openUnitModal(t)   { document.getElementById('modalTitle').textContent = t; document.getElementById('unitModal').classList.add('active'); if (!currentEditNode) document.getElementById('unitName').value = ''; }
+function closeUnitModal()   { document.getElementById('unitModal').classList.remove('active'); currentEditNode = null; currentParentNode = null; }
+document.getElementById('unitForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('unitName').value.trim();
+    if (!name) { showToast('Naziv je obavezan'); return; }
+    if (currentEditNode) {
+        const old = currentEditNode.name; currentEditNode.name = name;
+        if (old !== name && orgPositions[old]) { orgPositions[name] = orgPositions[old]; delete orgPositions[old]; }
+        showToast('Jedinica ažurirana');
+    } else {
+        const nn = { id: 'unit-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9), name, level: currentParentNode.level + 1, children: [] };
+        if (!currentParentNode.children) currentParentNode.children = [];
+        currentParentNode.children.push(nn); orgPositions[name] = []; showToast('Jedinica dodana');
+    }
+    saveData(); renderTree(); closeUnitModal();
+});
+
+// ════════════════════════════════════════════════════════════
+// POZICIJE
+// ════════════════════════════════════════════════════════════
+function showPositions(node) {
+    currentUnitForPositions = node;
+    document.getElementById('posModalTitle').textContent = `Pozicije — ${node.name}`;
+    const container = document.getElementById('positionsList'); container.innerHTML = '';
+    const positions = orgPositions[node.name] || [];
+    if (!positions.length) { container.innerHTML = '<p style="color:#666;text-align:center;padding:1rem;">Nema pozicija</p>'; }
+    else {
+        positions.forEach((pos, idx) => {
+            const item = document.createElement('div'); item.className = 'position-item'; item.draggable = true; item.dataset.index = idx;
+            item.addEventListener('dragstart', handleDragStart); item.addEventListener('dragend', handleDragEnd);
+            item.addEventListener('dragover', handleDragOver); item.addEventListener('drop', handleDrop);
+            // Handle
+            const handle = document.createElement('span'); handle.className = 'drag-handle'; handle.innerHTML = '⋮⋮'; item.appendChild(handle);
+            // Info
+            const info = document.createElement('div'); info.className = 'pos-info'; info.onclick = () => openEmployeeModal(node.name, idx);
+            const t = document.createElement('div'); t.className = 'pos-title'; t.textContent = posTitle_(pos); info.appendChild(t);
+            if (pos && typeof pos === 'object' && pos.stepen) { const s = document.createElement('div'); s.className = 'pos-sub'; s.textContent = pos.stepen; info.appendChild(s); }
+            item.appendChild(info);
+            // Koeficijent
+            if (pos && typeof pos === 'object') {
+                const kCol = document.createElement('div'); kCol.className = 'koef-col';
+                if (pos.koef !== null && pos.koef !== undefined) {
+                    const k = document.createElement('span'); k.className = 'koef-tag koef-val';
+                    k.textContent = `K: ${(pos.usloviRada > 0 && pos.ukupno) ? pos.ukupno : pos.koef}`; kCol.appendChild(k);
+                    if (pos.usloviRada > 0) { const ur = document.createElement('span'); ur.className = 'koef-tag koef-ur'; ur.textContent = `UR: ${pos.usloviRada}%`; kCol.appendChild(ur); }
+                } else if (pos.napomena) { const st = document.createElement('span'); st.className = 'koef-tag koef-stat'; st.textContent = 'Ugovor'; kCol.appendChild(st); }
+                item.appendChild(kCol);
+            }
+            // Radnik
+            if (pos && typeof pos === 'object' && pos.employee && pos.employee.name) { const m = document.createElement('span'); m.className = 'emp-tag'; m.textContent = `👤 ${pos.employee.name}`; item.appendChild(m); }
+            // Actions
+            const actDiv = document.createElement('div'); actDiv.className = 'position-actions';
+            const moveB = document.createElement('button'); moveB.className = 'btn btn-secondary btn-small'; moveB.innerHTML = '↔️';
+            moveB.onclick = e => { e.stopPropagation(); selectedPosition = { index: idx, pos: positions[idx], title: posTitle_(positions[idx]) }; openMoveModal(); }; actDiv.appendChild(moveB);
+            const delB = document.createElement('button'); delB.className = 'btn btn-danger btn-small'; delB.innerHTML = '🗑️';
+            delB.onclick = e => { e.stopPropagation(); deletePosition(idx); }; actDiv.appendChild(delB);
+            item.appendChild(actDiv); container.appendChild(item);
+        });
+    }
+    document.getElementById('positionModal').classList.add('active');
+}
+function closePositionModal() { document.getElementById('positionModal').classList.remove('active'); currentUnitForPositions = null; }
+function addPosition() {
+    const n = prompt('Unesite naziv pozicije:'); if (!n || !n.trim()) return;
+    if (!orgPositions[currentUnitForPositions.name]) orgPositions[currentUnitForPositions.name] = [];
+    orgPositions[currentUnitForPositions.name].push({ title: n.trim(), employee: { name:'', education:'', experience:'', other:'' } });
+    saveData(); showPositions(currentUnitForPositions); renderTree(); showToast('Pozicija dodana');
+}
+function deletePosition(index) {
+    if (!confirm('Obrisati ovu poziciju?')) return;
+    orgPositions[currentUnitForPositions.name].splice(index, 1);
+    saveData(); showPositions(currentUnitForPositions); renderTree(); showToast('Pozicija obrisana');
+}
+
+// ════════════════════════════════════════════════════════════
+// DRAG & DROP
+// ════════════════════════════════════════════════════════════
+function handleDragStart(e) { draggedPositionIndex = parseInt(e.target.dataset.index); e.target.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+function handleDragEnd(e)   { e.target.classList.remove('dragging'); }
+function handleDragOver(e)  { if (e.preventDefault) e.preventDefault(); const t = e.target.closest('.position-item'); if (t && t.dataset.index !== String(draggedPositionIndex)) t.classList.add('drag-over'); return false; }
+function handleDrop(e) {
+    if (e.stopPropagation) e.stopPropagation();
+    const t = e.target.closest('.position-item'); if (!t) return false;
+    t.classList.remove('drag-over');
+    const di = parseInt(t.dataset.index);
+    if (draggedPositionIndex !== di) {
+        const p = orgPositions[currentUnitForPositions.name]; const drag = p[draggedPositionIndex]; p.splice(draggedPositionIndex, 1);
+        p.splice(draggedPositionIndex < di ? di - 1 : di, 0, drag);
+        saveData(); showPositions(currentUnitForPositions); renderTree();
+    }
+    return false;
+}
+
+// ════════════════════════════════════════════════════════════
+// MOVE MODAL
+// ════════════════════════════════════════════════════════════
+function openMoveModal() {
+    const sel = document.getElementById('targetUnitSelect'); sel.innerHTML = '';
+    function ao(n, prefix = '') { const opt = document.createElement('option'); opt.value = n.name; opt.textContent = prefix + n.name; if (n.name !== currentUnitForPositions.name) sel.appendChild(opt); if (n.children) n.children.forEach(c => ao(c, prefix + '  ')); }
+    ao(organizationalStructure);
+    document.getElementById('movingPositionName').textContent = selectedPosition.title;
+    document.getElementById('moveModal').classList.add('active');
+}
+function closeMoveModal() { document.getElementById('moveModal').classList.remove('active'); selectedPosition = null; }
+function confirmMovePosition() {
+    const target = document.getElementById('targetUnitSelect').value;
+    if (!target) { showToast('Odaberite odredišnu jedinicu'); return; }
+    orgPositions[currentUnitForPositions.name].splice(selectedPosition.index, 1);
+    if (!orgPositions[target]) orgPositions[target] = [];
+    orgPositions[target].push(selectedPosition.pos);
+    saveData(); showPositions(currentUnitForPositions); renderTree(); closeMoveModal(); showToast(`Premješteno u ${target}`);
+}
+function movePositionToUnit() { if (!selectedPosition) { showToast('Prvo označite poziciju'); return; } openMoveModal(); }
+
+// ════════════════════════════════════════════════════════════
+// EMPLOYEE MODAL
+// ════════════════════════════════════════════════════════════
+function openEmployeeModal(unitName, index) {
+    currentEmployeeCtx = { unitName, index };
+    const p = ensurePosObject_(unitName, index); const emp = posEmployee_(p);
+    document.getElementById('empModalTitle').textContent = `Radnik – ${posTitle_(p)}`;
+    document.getElementById('empName').value = emp.name || '';
+    document.getElementById('empEducation').value = emp.education || '';
+    document.getElementById('empExperience').value = emp.experience || '';
+    document.getElementById('empOther').value = emp.other || '';
+    document.getElementById('employeeModal').classList.add('active');
+}
+function closeEmployeeModal() { document.getElementById('employeeModal').classList.remove('active'); currentEmployeeCtx = { unitName: null, index: null }; }
+document.getElementById('employeeForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const { unitName, index } = currentEmployeeCtx; if (!unitName && unitName !== '') return;
+    const p = ensurePosObject_(unitName, index); const emp = posEmployee_(p);
+    emp.name = document.getElementById('empName').value.trim();
+    emp.education = document.getElementById('empEducation').value.trim();
+    emp.experience = document.getElementById('empExperience').value.trim();
+    emp.other = document.getElementById('empOther').value.trim();
+    saveData(); renderTree();
+    if (currentUnitForPositions && currentUnitForPositions.name === unitName) showPositions(currentUnitForPositions);
+    closeEmployeeModal(); showToast('Podaci sačuvani');
+});
+
+// ════════════════════════════════════════════════════════════
+// SEARCH
+// ════════════════════════════════════════════════════════════
+document.getElementById('searchInput').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('.tree-node').forEach(node => {
+        const card = node.querySelector('.node-card');
+        const text = card.querySelector('.node-title').textContent.toLowerCase();
+        const un = findNodeById(organizationalStructure, node.dataset.nodeId);
+        const positions = un ? (orgPositions[un.name] || []) : [];
+        const hpm = positions.some(p => posTitle_(p).toLowerCase().includes(q));
+        if (text.includes(q) || hpm || !q) { node.style.display = 'flex'; card.style.background = (text.includes(q) || hpm) && q ? '#fffbeb' : ''; }
+        else node.style.display = 'none';
+    });
+});
+function findNodeById(node, id) { if (node.id === id) return node; if (!node.children) return null; for (let c of node.children) { const f = findNodeById(c, id); if (f) return f; } return null; }
+
+// ════════════════════════════════════════════════════════════
+// EXPORT / IMPORT
+// ════════════════════════════════════════════════════════════
+function exportData() {
+    saveData();
+    const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url;
+    a.download = `organizacijska_sema_${new Date().toISOString().split('T')[0]}.html`;
+    a.click(); URL.revokeObjectURL(url); showToast('HTML fajl izvezen');
+}
+function importData() { const i = document.createElement('input'); i.type = 'file'; i.accept = '.html,.json'; i.onchange = handleImport; i.click(); }
+async function handleImport(event) {
+    const file = event.target.files[0]; if (!file) return;
+    try {
+        const text = await file.text(); let importedData = null;
+        if (file.name.endsWith('.json')) { const d = JSON.parse(text); if (d.structure && d.positions) importedData = d; }
+        else if (file.name.endsWith('.html')) {
+            const parser = new DOMParser(); const doc = parser.parseFromString(text, 'text/html');
+            for (let s of doc.getElementsByTagName('script')) { const st = s.textContent; if (st.includes('let organizationalStructure = {')) { try { const m = st.match(/let organizationalStructure = ({[\s\S]*?});[\s\S]*?let orgPositions = ({[\s\S]*?});/); if (m) { importedData = { structure: eval('(' + m[1] + ')'), positions: eval('(' + m[2] + ')') }; break; } } catch(ex) {} } }
+        }
+        if (importedData && importedData.structure && importedData.positions) {
+            if (confirm('Uvesti podatke? Ovo zamjenjuje trenutne podatke.')) { Object.assign(organizationalStructure, importedData.structure); orgPositions = importedData.positions; await saveData(); renderTree(); showToast('Podaci uvezeni'); }
+        } else showToast('Nije pronađen validan format');
+    } catch(e) { showToast('Greška: ' + e.message); }
+}
+
+// ════════════════════════════════════════════════════════════
+// CLOSE MODALS ON BACKDROP CLICK
+// ════════════════════════════════════════════════════════════
+['unitModal','positionModal','moveModal','employeeModal','platformModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+        if (e.target.id === id) {
+            if (id === 'unitModal')       closeUnitModal();
+            if (id === 'positionModal')   closePositionModal();
+            if (id === 'moveModal')       closeMoveModal();
+            if (id === 'employeeModal')   closeEmployeeModal();
+            if (id === 'platformModal')   closePlatformModal();
+        }
+    });
+});
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+(function init() {
+    // Auto-detect mobile
+    const saved = localStorage.getItem('spd_platform');
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const plat = saved || (isMobile ? 'mobile' : 'desktop');
+    setPlatform(plat);
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+    loadData();
+    // Show pinch hint on first mobile visit
+    if (!saved && isMobile) setTimeout(showPinchHint, 1200);
+})();
+
+window.addEventListener('storage', e => {
+    if (e.key && e.key.startsWith(STORAGE_KEY) && e.newValue) { loadData(); showToast('Ažurirano'); }
+});
+</script>
+</body>
+</html>
+
+
