@@ -161,6 +161,51 @@
             .btn-small{padding:.35rem .6rem;font-size:.75rem;}
             .children{gap:1.25rem;}
         }
+
+        /* ── STATISTICS MODAL ── */
+        .stats-modal .modal-content{max-width:720px;max-height:94vh;}
+        .stats-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:1.25rem;}
+        .stats-tab{padding:.65rem 1.1rem;border:none;background:none;font-family:'Work Sans',sans-serif;font-weight:500;font-size:.88rem;cursor:pointer;color:var(--text-secondary);border-bottom:2.5px solid transparent;transition:all .2s;margin-bottom:-2px;}
+        .stats-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600;}
+        .stats-tab:hover{color:var(--primary);}
+        .stats-panel{display:none;}
+        .stats-panel.active{display:block;}
+
+        /* Summary cards */
+        .stat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:.75rem;margin-bottom:1.25rem;}
+        .stat-card{background:var(--bg-main);border-radius:10px;padding:1rem;text-align:center;border:1.5px solid var(--border);}
+        .stat-card .stat-num{font-family:'Crimson Pro',serif;font-size:1.8rem;font-weight:700;color:var(--primary);line-height:1.1;}
+        .stat-card .stat-label{font-size:.72rem;color:var(--text-secondary);margin-top:.3rem;}
+
+        /* Tables */
+        .stats-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:1rem;}
+        .stats-table th{background:var(--primary);color:white;padding:.55rem .65rem;text-align:left;font-weight:500;position:sticky;top:0;white-space:nowrap;}
+        .stats-table td{padding:.5rem .65rem;border-bottom:1px solid var(--border);}
+        .stats-table tr:hover td{background:#f0faf3;}
+        .stats-table .num{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;}
+        .stats-table .rank-cell{text-align:center;font-weight:700;color:var(--primary);min-width:32px;}
+        .rank-gold{color:#b8860b !important;}
+        .rank-silver{color:#6b7280 !important;}
+        .rank-bronze{color:#92400e !important;}
+        .stats-scroll{max-height:55vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px;}
+
+        /* Bar chart */
+        .bar-row{display:flex;align-items:center;gap:.5rem;margin:.35rem 0;font-size:.78rem;}
+        .bar-label{min-width:160px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;color:var(--text-secondary);}
+        .bar-track{flex:1;height:22px;background:var(--bg-main);border-radius:4px;overflow:hidden;position:relative;}
+        .bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));border-radius:4px;transition:width .4s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;}
+        .bar-val{font-size:.7rem;font-weight:600;color:white;white-space:nowrap;}
+        .bar-val-outside{font-size:.7rem;font-weight:600;color:var(--primary);margin-left:4px;white-space:nowrap;}
+
+        /* Edu distribution */
+        .edu-legend{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem;}
+        .edu-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .6rem;border-radius:15px;font-size:.72rem;font-weight:500;border:1px solid var(--border);}
+        .edu-dot{width:10px;height:10px;border-radius:50%;}
+
+        /* Filter */
+        .stats-filter{display:flex;gap:.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;}
+        .stats-filter input,.stats-filter select{padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:6px;font-family:'Work Sans',sans-serif;font-size:.82rem;}
+        .stats-filter input{flex:1;min-width:140px;}
     </style>
 </head>
 <body class="mode-desktop">
@@ -207,6 +252,7 @@
             <button class="btn btn-primary btn-small" onclick="addRootUnit()">➕ <span class="hide-xs">Dodaj jedinicu</span></button>
             <button class="btn btn-secondary btn-small" id="undoBtn" onclick="undo()" disabled title="Poništi (Ctrl+Z)">↩️ <span class="hide-xs">Undo</span></button>
             <button class="btn btn-secondary btn-small" onclick="resetToDefaults()" title="Učitaj originalne podatke nanovo">🔄 <span class="hide-xs">Reset</span></button>
+            <button class="btn btn-secondary btn-small" onclick="openStatsModal()" title="Statistika, rangiranje, analiza">📊 <span class="hide-xs">Statistika</span></button>
             <button class="btn btn-secondary btn-small" onclick="exportData()">💾 <span class="hide-xs">Spremi</span></button>
             <button class="btn btn-secondary btn-small" onclick="importData()">📂 <span class="hide-xs">Učitaj</span></button>
         </div>
@@ -279,6 +325,21 @@
                 <div class="form-group"><label>Ostalo</label><textarea id="empOther" rows="4" placeholder="Napomene, certifikati, licence..."></textarea></div>
                 <div class="modal-actions"><button type="button" class="btn btn-secondary" onclick="closeEmployeeModal()">Otkaži</button><button type="submit" class="btn btn-primary">Sačuvaj</button></div>
             </form>
+        </div>
+    </div>
+
+    <!-- STATISTICS MODAL -->
+    <div class="modal stats-modal" id="statsModal">
+        <div class="modal-content">
+            <div class="modal-header"><span>📊 Statistika i Analiza</span><button class="close-btn" onclick="closeStatsModal()">×</button></div>
+            <div class="stats-tabs">
+                <button class="stats-tab active" onclick="switchStatsTab('overview',this)">Pregled</button>
+                <button class="stats-tab" onclick="switchStatsTab('ranking',this)">Rangiranje</button>
+                <button class="stats-tab" onclick="switchStatsTab('departments',this)">Odjeli</button>
+                <button class="stats-tab" onclick="switchStatsTab('education',this)">Obrazovanje</button>
+                <button class="stats-tab" onclick="switchStatsTab('workConditions',this)">Uslovi rada</button>
+            </div>
+            <div id="statsContent"></div>
         </div>
     </div>
 
@@ -1635,6 +1696,322 @@ async function handleImport(event) {
 window.addEventListener('storage', e => {
     if (e.key && e.key.startsWith(STORAGE_KEY) && e.newValue) { loadData(); showToast('Ažurirano'); }
 });
+
+// ════════════════════════════════════════════════════════════
+// STATISTICS & ANALYSIS
+// ════════════════════════════════════════════════════════════
+let currentStatsTab = 'overview';
+function openStatsModal() { document.getElementById('statsModal').classList.add('active'); currentStatsTab = 'overview'; renderStatsTab(); }
+function closeStatsModal() { document.getElementById('statsModal').classList.remove('active'); }
+function switchStatsTab(tab, btn) {
+    currentStatsTab = tab;
+    document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderStatsTab();
+}
+
+function getAllPositions() {
+    const all = [];
+    for (const [dept, positions] of Object.entries(orgPositions)) {
+        (positions || []).forEach((p, i) => {
+            if (p && typeof p === 'object') all.push({ ...p, _dept: dept, _idx: i });
+        });
+    }
+    return all;
+}
+
+function countNodes(node) {
+    let c = 1;
+    if (node.children) node.children.forEach(ch => c += countNodes(ch));
+    return c;
+}
+
+function getDepth(node) {
+    if (!node.children || node.children.length === 0) return 0;
+    return 1 + Math.max(...node.children.map(getDepth));
+}
+
+function renderStatsTab() {
+    const container = document.getElementById('statsContent');
+    const allPos = getAllPositions();
+    switch (currentStatsTab) {
+        case 'overview': container.innerHTML = renderOverview(allPos); break;
+        case 'ranking': container.innerHTML = renderRanking(allPos); break;
+        case 'departments': container.innerHTML = renderDepartments(allPos); break;
+        case 'education': container.innerHTML = renderEducation(allPos); break;
+        case 'workConditions': container.innerHTML = renderWorkConditions(allPos); break;
+    }
+}
+
+// ── TAB 1: PREGLED ──
+function renderOverview(allPos) {
+    const withKoef = allPos.filter(p => p.koef !== null && p.koef !== undefined);
+    const withUR = allPos.filter(p => p.usloviRada > 0);
+    const ugovorni = allPos.filter(p => p.napomena && !p.koef);
+    const popunjene = allPos.filter(p => p.employee && p.employee.name);
+    const deptCount = Object.keys(orgPositions).length;
+    const nodeCount = countNodes(organizationalStructure);
+    const depth = getDepth(organizationalStructure);
+    const avgKoef = withKoef.length ? (withKoef.reduce((s, p) => s + p.koef, 0) / withKoef.length).toFixed(2) : '–';
+    const maxK = withKoef.length ? withKoef.reduce((m, p) => p.koef > m.koef ? p : m) : null;
+    const minK = withKoef.length ? withKoef.reduce((m, p) => p.koef < m.koef ? p : m) : null;
+    const medianK = withKoef.length ? (() => { const s = withKoef.map(p=>p.koef).sort((a,b)=>a-b); const m = Math.floor(s.length/2); return s.length%2 ? s[m] : ((s[m-1]+s[m])/2).toFixed(2); })() : '–';
+    const avgUR = withUR.length ? (withUR.reduce((s,p)=>s+p.usloviRada,0)/withUR.length).toFixed(1) : '–';
+
+    return `
+    <div class="stat-cards">
+        <div class="stat-card"><div class="stat-num">${allPos.length}</div><div class="stat-label">Ukupno pozicija</div></div>
+        <div class="stat-card"><div class="stat-num">${deptCount}</div><div class="stat-label">Odjela / jedinica</div></div>
+        <div class="stat-card"><div class="stat-num">${nodeCount}</div><div class="stat-label">Čvorova u stablu</div></div>
+        <div class="stat-card"><div class="stat-num">${depth}</div><div class="stat-label">Dubina stabla</div></div>
+        <div class="stat-card"><div class="stat-num">${avgKoef}</div><div class="stat-label">Prosj. koeficijent</div></div>
+        <div class="stat-card"><div class="stat-num">${medianK}</div><div class="stat-label">Medijan koef.</div></div>
+        <div class="stat-card"><div class="stat-num">${withUR.length}</div><div class="stat-label">Sa uslovima rada</div></div>
+        <div class="stat-card"><div class="stat-num">${ugovorni.length}</div><div class="stat-label">Ugovorne pozicije</div></div>
+        <div class="stat-card"><div class="stat-num">${popunjene.length}/${allPos.length}</div><div class="stat-label">Popunjeno</div></div>
+    </div>
+    ${maxK ? `<div style="padding:.75rem;background:#f0faf3;border-radius:8px;margin-bottom:.5rem;font-size:.84rem;">
+        <strong>Najviši koef.:</strong> ${maxK.koef} — ${maxK.title} <span style="color:var(--text-secondary)">(${maxK._dept})</span>
+    </div>` : ''}
+    ${minK ? `<div style="padding:.75rem;background:#fef3c7;border-radius:8px;margin-bottom:.5rem;font-size:.84rem;">
+        <strong>Najniži koef.:</strong> ${minK.koef} — ${minK.title} <span style="color:var(--text-secondary)">(${minK._dept})</span>
+    </div>` : ''}
+    <div style="padding:.75rem;background:#dbeafe;border-radius:8px;font-size:.84rem;">
+        <strong>Prosj. uslovi rada:</strong> ${avgUR}% (od ${withUR.length} pozicija sa UR) &nbsp;|&nbsp;
+        <strong>Raspon koef.:</strong> ${minK?minK.koef:'–'} – ${maxK?maxK.koef:'–'}
+    </div>`;
+}
+
+// ── TAB 2: RANGIRANJE ──
+function renderRanking(allPos) {
+    const withKoef = allPos.filter(p => p.koef !== null && p.koef !== undefined);
+    // Sort by ukupno (with work conditions) then by koef
+    const sorted = [...withKoef].sort((a, b) => {
+        const aVal = a.ukupno || a.koef || 0;
+        const bVal = b.ukupno || b.koef || 0;
+        return bVal - aVal;
+    });
+
+    let filterHtml = `<div class="stats-filter">
+        <input type="text" id="rankSearch" placeholder="Filtriraj po nazivu ili odjelu..." oninput="filterRankTable(this.value)">
+        <select id="rankSort" onchange="renderStatsTab()">
+            <option value="ukupno">Po ukupnom koef.</option>
+            <option value="koef">Po baznom koef.</option>
+            <option value="ur">Po uslovima rada</option>
+        </select>
+    </div>`;
+
+    const sortBy = document.getElementById('rankSort')?.value || 'ukupno';
+    if (sortBy === 'koef') sorted.sort((a,b) => (b.koef||0) - (a.koef||0));
+    else if (sortBy === 'ur') sorted.sort((a,b) => (b.usloviRada||0) - (a.usloviRada||0));
+
+    let rows = sorted.map((p, i) => {
+        const rankClass = i === 0 ? 'rank-gold' : i === 1 ? 'rank-silver' : i === 2 ? 'rank-bronze' : '';
+        const medal = i === 0 ? ' 🥇' : i === 1 ? ' 🥈' : i === 2 ? ' 🥉' : '';
+        const ukVal = p.ukupno || p.koef || 0;
+        return `<tr class="rank-row" data-search="${(p.title+' '+p._dept).toLowerCase()}">
+            <td class="rank-cell ${rankClass}">${i+1}${medal}</td>
+            <td><strong>${p.title}</strong><br><span style="font-size:.7rem;color:var(--text-secondary)">${p._dept}</span></td>
+            <td class="num">${p.koef}</td>
+            <td class="num">${p.usloviRada > 0 ? p.usloviRada + '%' : '–'}</td>
+            <td class="num" style="font-weight:700;color:var(--primary)">${ukVal}</td>
+            <td style="font-size:.72rem;color:var(--text-secondary)">${p.stepen || '–'}</td>
+        </tr>`;
+    }).join('');
+
+    return filterHtml + `<div class="stats-scroll"><table class="stats-table" id="rankTable">
+        <thead><tr><th>#</th><th>Pozicija</th><th>Baza K.</th><th>UR %</th><th>Ukupno</th><th>Stepen</th></tr></thead>
+        <tbody>${rows}</tbody>
+    </table></div>
+    <div style="margin-top:.75rem;font-size:.78rem;color:var(--text-secondary);">Prikazano ${sorted.length} pozicija sa koeficijentom od ukupno ${allPos.length}</div>`;
+}
+
+// ── TAB 3: ODJELI ──
+function renderDepartments(allPos) {
+    const deptStats = [];
+    for (const [dept, positions] of Object.entries(orgPositions)) {
+        const pos = (positions || []).filter(p => p && typeof p === 'object');
+        const wk = pos.filter(p => p.koef !== null && p.koef !== undefined);
+        const avg = wk.length ? (wk.reduce((s,p)=>s+p.koef,0)/wk.length).toFixed(2) : 0;
+        const maxK = wk.length ? Math.max(...wk.map(p=>p.koef)) : 0;
+        const minK = wk.length ? Math.min(...wk.map(p=>p.koef)) : 0;
+        const withUR = pos.filter(p => p.usloviRada > 0).length;
+        const popunjene = pos.filter(p => p.employee && p.employee.name).length;
+        deptStats.push({ dept, total: pos.length, withKoef: wk.length, avg: parseFloat(avg), maxK, minK, withUR, popunjene });
+    }
+    deptStats.sort((a,b) => b.total - a.total);
+    const maxTotal = Math.max(...deptStats.map(d=>d.total), 1);
+
+    let bars = deptStats.map(d => {
+        const pct = (d.total / maxTotal * 100).toFixed(0);
+        const fillW = Math.max(pct, 2);
+        return `<div class="bar-row">
+            <div class="bar-label" title="${d.dept}">${d.dept}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${fillW}%">${pct > 20 ? `<span class="bar-val">${d.total}</span>` : ''}</div></div>
+            ${pct <= 20 ? `<span class="bar-val-outside">${d.total}</span>` : ''}
+        </div>`;
+    }).join('');
+
+    let tableRows = deptStats.map(d => `<tr>
+        <td><strong>${d.dept}</strong></td>
+        <td class="num">${d.total}</td>
+        <td class="num">${d.avg || '–'}</td>
+        <td class="num">${d.maxK || '–'}</td>
+        <td class="num">${d.minK || '–'}</td>
+        <td class="num">${d.withUR}</td>
+        <td class="num">${d.popunjene}/${d.total}</td>
+    </tr>`).join('');
+
+    return `<h4 style="font-family:'Crimson Pro',serif;color:var(--primary);margin-bottom:.75rem;">Broj pozicija po odjelima</h4>
+    ${bars}
+    <h4 style="font-family:'Crimson Pro',serif;color:var(--primary);margin:1.25rem 0 .75rem;">Detaljni pregled</h4>
+    <div class="stats-scroll"><table class="stats-table">
+        <thead><tr><th>Odjel</th><th>Ukupno</th><th>Prosj. K</th><th>Max K</th><th>Min K</th><th>Sa UR</th><th>Popunjeno</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+    </table></div>`;
+}
+
+// ── TAB 4: OBRAZOVANJE ──
+function renderEducation(allPos) {
+    const eduMap = {};
+    const colors = ['#1a4d2e','#2d6a4f','#40916c','#52b788','#74c69d','#95d5b2','#b7e4c7','#d4af37','#e9c46a','#f4a261','#e76f51','#264653'];
+    allPos.forEach(p => {
+        const s = (p.stepen || 'Neodređeno').trim();
+        // Kategorize
+        let cat = 'Ostalo';
+        if (/VSS.*VII.*240|VSS.*VII\/2/i.test(s)) cat = 'VSS (240-300 ECTS)';
+        else if (/VSS.*VII.*180|VSS.*VII\/1/i.test(s)) cat = 'VSS (180-240 ECTS)';
+        else if (/VŠS/i.test(s)) cat = 'VŠS';
+        else if (/SSS.*KV|KV.*SSS/i.test(s)) cat = 'SSS/KV';
+        else if (/^SSS/i.test(s) || /\/\s*SSS/i.test(s)) cat = 'SSS';
+        else if (/VKV/i.test(s)) cat = 'VKV';
+        else if (/^KV/i.test(s)) cat = 'KV';
+        else if (/PK/i.test(s)) cat = 'PK';
+        else if (/NK/i.test(s)) cat = 'NK';
+        else if (/Statut|Član/i.test(s)) cat = 'Statutarne pozicije';
+        if (!eduMap[cat]) eduMap[cat] = [];
+        eduMap[cat].push(p);
+    });
+
+    const sorted = Object.entries(eduMap).sort((a,b) => b[1].length - a[1].length);
+    const maxCount = Math.max(...sorted.map(e => e[1].length), 1);
+
+    let bars = sorted.map(([cat, arr], i) => {
+        const pct = (arr.length / allPos.length * 100).toFixed(1);
+        const fillW = (arr.length / maxCount * 100).toFixed(0);
+        const avgK = arr.filter(p=>p.koef).length ? (arr.filter(p=>p.koef).reduce((s,p)=>s+p.koef,0)/arr.filter(p=>p.koef).length).toFixed(2) : '–';
+        return `<tr>
+            <td><span class="edu-dot" style="background:${colors[i%colors.length]};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;"></span>${cat}</td>
+            <td class="num">${arr.length}</td>
+            <td class="num">${pct}%</td>
+            <td class="num">${avgK}</td>
+        </tr>`;
+    }).join('');
+
+    let legendHtml = sorted.map(([cat, arr], i) =>
+        `<span class="edu-chip"><span class="edu-dot" style="background:${colors[i%colors.length]}"></span>${cat}: ${arr.length}</span>`
+    ).join('');
+
+    // Visual bar chart
+    let barChart = sorted.map(([cat, arr], i) => {
+        const pct = Math.max((arr.length / maxCount * 100), 3);
+        return `<div class="bar-row">
+            <div class="bar-label">${cat}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[i%colors.length]}">${pct > 20 ? `<span class="bar-val">${arr.length} (${(arr.length/allPos.length*100).toFixed(0)}%)</span>` : ''}</div></div>
+            ${pct <= 20 ? `<span class="bar-val-outside">${arr.length}</span>` : ''}
+        </div>`;
+    }).join('');
+
+    return `<h4 style="font-family:'Crimson Pro',serif;color:var(--primary);margin-bottom:.75rem;">Distribucija po obrazovanju</h4>
+    ${barChart}
+    <div class="edu-legend">${legendHtml}</div>
+    <h4 style="font-family:'Crimson Pro',serif;color:var(--primary);margin:1.25rem 0 .75rem;">Detalji</h4>
+    <div class="stats-scroll"><table class="stats-table">
+        <thead><tr><th>Stepen obrazovanja</th><th>Broj</th><th>%</th><th>Prosj. K</th></tr></thead>
+        <tbody>${bars}</tbody>
+    </table></div>`;
+}
+
+// ── TAB 5: USLOVI RADA ──
+function renderWorkConditions(allPos) {
+    const withUR = allPos.filter(p => p.usloviRada > 0);
+    const withoutUR = allPos.filter(p => !p.usloviRada || p.usloviRada === 0);
+    const groups = {};
+    withUR.forEach(p => {
+        const key = p.usloviRada + '%';
+        if (!groups[key]) groups[key] = { pct: p.usloviRada, positions: [] };
+        groups[key].positions.push(p);
+    });
+    const sortedGroups = Object.values(groups).sort((a,b) => b.pct - a.pct);
+
+    // Bonus summary
+    const totalBonusPositions = withUR.length;
+    const avgBonus = withUR.length ? (withUR.reduce((s,p) => s + (p.ukupno - p.koef), 0) / withUR.length).toFixed(2) : 0;
+    const maxBonusPos = withUR.length ? withUR.reduce((m, p) => ((p.ukupno||0) - (p.koef||0)) > ((m.ukupno||0) - (m.koef||0)) ? p : m) : null;
+
+    let summary = `<div class="stat-cards">
+        <div class="stat-card"><div class="stat-num">${totalBonusPositions}</div><div class="stat-label">Pozicija sa UR</div></div>
+        <div class="stat-card"><div class="stat-num">${withoutUR.length}</div><div class="stat-label">Bez uslova rada</div></div>
+        <div class="stat-card"><div class="stat-num">${avgBonus}</div><div class="stat-label">Prosj. bonus koef.</div></div>
+        <div class="stat-card"><div class="stat-num">${sortedGroups.length}</div><div class="stat-label">Grupa UR %</div></div>
+    </div>`;
+
+    if (maxBonusPos) {
+        const bonus = ((maxBonusPos.ukupno||0) - (maxBonusPos.koef||0)).toFixed(2);
+        summary += `<div style="padding:.75rem;background:#dbeafe;border-radius:8px;margin-bottom:1rem;font-size:.84rem;">
+            <strong>Najveći bonus:</strong> +${bonus} (${maxBonusPos.usloviRada}% UR) — ${maxBonusPos.title} <span style="color:var(--text-secondary)">(${maxBonusPos._dept})</span>
+        </div>`;
+    }
+
+    let groupRows = sortedGroups.map(g => {
+        const avgK = (g.positions.reduce((s,p)=>s+(p.koef||0),0)/g.positions.length).toFixed(2);
+        const avgUk = (g.positions.reduce((s,p)=>s+(p.ukupno||0),0)/g.positions.length).toFixed(2);
+        const depts = [...new Set(g.positions.map(p=>p._dept))];
+        return `<tr>
+            <td style="font-weight:700;color:#1e40af;">${g.pct}%</td>
+            <td class="num">${g.positions.length}</td>
+            <td class="num">${avgK}</td>
+            <td class="num" style="font-weight:600;color:var(--primary)">${avgUk}</td>
+            <td style="font-size:.72rem;">${depts.slice(0,3).join(', ')}${depts.length > 3 ? '...' : ''}</td>
+        </tr>`;
+    }).join('');
+
+    // Top 10 by absolute bonus
+    const top10 = [...withUR].sort((a,b) => ((b.ukupno||0)-(b.koef||0)) - ((a.ukupno||0)-(a.koef||0))).slice(0, 10);
+    let top10Rows = top10.map((p,i) => {
+        const bonus = ((p.ukupno||0) - (p.koef||0)).toFixed(2);
+        return `<tr>
+            <td class="rank-cell">${i+1}</td>
+            <td>${p.title}<br><span style="font-size:.7rem;color:var(--text-secondary)">${p._dept}</span></td>
+            <td class="num">${p.koef}</td>
+            <td class="num">${p.usloviRada}%</td>
+            <td class="num" style="color:var(--primary);font-weight:700">+${bonus}</td>
+            <td class="num" style="font-weight:700">${p.ukupno}</td>
+        </tr>`;
+    }).join('');
+
+    return summary + `
+    <h4 style="font-family:'Crimson Pro',serif;color:var(--primary);margin-bottom:.75rem;">Grupe po procentu UR</h4>
+    <div class="stats-scroll" style="max-height:30vh;"><table class="stats-table">
+        <thead><tr><th>UR %</th><th>Broj</th><th>Prosj. baza</th><th>Prosj. ukupno</th><th>Odjeli</th></tr></thead>
+        <tbody>${groupRows}</tbody>
+    </table></div>
+    <h4 style="font-family:'Crimson Pro',serif;color:var(--primary);margin:1.25rem 0 .75rem;">Top 10 — Najveći bonus od UR</h4>
+    <div class="stats-scroll" style="max-height:30vh;"><table class="stats-table">
+        <thead><tr><th>#</th><th>Pozicija</th><th>Baza</th><th>UR %</th><th>Bonus</th><th>Ukupno</th></tr></thead>
+        <tbody>${top10Rows}</tbody>
+    </table></div>`;
+}
+
+function filterRankTable(q) {
+    q = q.toLowerCase();
+    document.querySelectorAll('#rankTable .rank-row').forEach(row => {
+        row.style.display = row.dataset.search.includes(q) ? '' : 'none';
+    });
+}
+
+// Add statsModal to backdrop click list
+document.getElementById('statsModal').addEventListener('click', e => { if (e.target.id === 'statsModal') closeStatsModal(); });
 
 // Ctrl+Z za undo
 document.addEventListener('keydown', e => {
