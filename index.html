@@ -205,6 +205,8 @@
     <div class="controls" id="controlsBar">
         <div class="action-btns" style="display:flex;gap:.4rem;flex-wrap:wrap;">
             <button class="btn btn-primary btn-small" onclick="addRootUnit()">➕ <span class="hide-xs">Dodaj jedinicu</span></button>
+            <button class="btn btn-secondary btn-small" id="undoBtn" onclick="undo()" disabled title="Poništi (Ctrl+Z)">↩️ <span class="hide-xs">Undo</span></button>
+            <button class="btn btn-secondary btn-small" onclick="resetToDefaults()" title="Učitaj originalne podatke nanovo">🔄 <span class="hide-xs">Reset</span></button>
             <button class="btn btn-secondary btn-small" onclick="exportData()">💾 <span class="hide-xs">Spremi</span></button>
             <button class="btn btn-secondary btn-small" onclick="importData()">📂 <span class="hide-xs">Učitaj</span></button>
         </div>
@@ -1102,11 +1104,49 @@ let orgPositions = {
         {"title":"Čistačica","stepen":"NK","koef":1.5,"usloviRada":0,"ukupno":1.5,"employee":{"name":"","education":"","experience":"","other":""}}
     ]
 };
-const STORAGE_KEY = 'org_structure_data_v3';
+const STORAGE_KEY = 'org_structure_data_v5';
+// Snapshot defaults BEFORE localStorage overwrites them
+const DEFAULT_STRUCTURE = JSON.parse(JSON.stringify(organizationalStructure));
+const DEFAULT_POSITIONS = JSON.parse(JSON.stringify(orgPositions));
+
 let currentEditNode = null, currentParentNode = null;
 let currentUnitForPositions = null, selectedPosition = null;
 let draggedPositionIndex = null;
 let currentEmployeeCtx = { unitName: null, index: null };
+
+// ════════════════════════════════════════════════════════════
+// UNDO STACK
+// ════════════════════════════════════════════════════════════
+const undoStack = [];
+const MAX_UNDO = 50;
+function pushUndo() {
+    undoStack.push({
+        structure: JSON.parse(JSON.stringify(organizationalStructure)),
+        positions: JSON.parse(JSON.stringify(orgPositions))
+    });
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+    updateUndoBtn();
+}
+function undo() {
+    if (undoStack.length === 0) { showToast('Nema akcija za poništavanje'); return; }
+    const state = undoStack.pop();
+    organizationalStructure = state.structure;
+    orgPositions = state.positions;
+    saveData(); renderTree(); updateUndoBtn();
+    showToast('Poništeno (' + undoStack.length + ' preostalo)');
+}
+function updateUndoBtn() {
+    const btn = document.getElementById('undoBtn');
+    if (btn) { btn.disabled = undoStack.length === 0; btn.title = undoStack.length > 0 ? `Poništi (${undoStack.length}) — Ctrl+Z` : 'Nema akcija za poništavanje'; }
+}
+function resetToDefaults() {
+    if (!confirm('RESETOVATI NA ORIGINALNE PODATKE?\n\nSve vaše izmjene će biti izgubljene!\nMožete koristiti Undo za povrat.')) return;
+    pushUndo();
+    organizationalStructure = JSON.parse(JSON.stringify(DEFAULT_STRUCTURE));
+    orgPositions = JSON.parse(JSON.stringify(DEFAULT_POSITIONS));
+    saveData(); renderTree(); updateUndoBtn();
+    showToast('Podaci vraćeni na originalne vrijednosti — 570 pozicija učitano');
+}
 
 // Zoom state
 let currentZoom = 1;
@@ -1363,7 +1403,8 @@ function addRootUnit()      { currentEditNode = null; currentParentNode = organi
 function addChildUnit(pn)   { currentEditNode = null; currentParentNode = pn; openUnitModal('Dodaj podređenu jedinicu'); }
 function editUnit(node)     { currentEditNode = node; currentParentNode = null; document.getElementById('unitName').value = node.name; openUnitModal('Uredi jedinicu'); }
 function deleteUnit(node)   {
-    if (!confirm(`Obrisati "${node.name}"?\n\nOvo briše i sve podređene jedinice i pozicije.`)) return;
+    if (!confirm(`Obrisati "${node.name}"?\n\nOvo briše i sve podređene jedinice i pozicije.\nMožete koristiti Undo za povrat.`)) return;
+    pushUndo();
     delete orgPositions[node.name];
     function rem(p) { if (!p.children) return false; const i = p.children.findIndex(c => c.id === node.id); if (i !== -1) { p.children.splice(i, 1); return true; } for (let c of p.children) if (rem(c)) return true; return false; }
     rem(organizationalStructure); saveData(); renderTree(); showToast('Jedinica obrisana');
@@ -1374,6 +1415,7 @@ document.getElementById('unitForm').addEventListener('submit', e => {
     e.preventDefault();
     const name = document.getElementById('unitName').value.trim();
     if (!name) { showToast('Naziv je obavezan'); return; }
+    pushUndo();
     if (currentEditNode) {
         const old = currentEditNode.name; currentEditNode.name = name;
         if (old !== name && orgPositions[old]) { orgPositions[name] = orgPositions[old]; delete orgPositions[old]; }
@@ -1433,12 +1475,14 @@ function showPositions(node) {
 function closePositionModal() { document.getElementById('positionModal').classList.remove('active'); currentUnitForPositions = null; }
 function addPosition() {
     const n = prompt('Unesite naziv pozicije:'); if (!n || !n.trim()) return;
+    pushUndo();
     if (!orgPositions[currentUnitForPositions.name]) orgPositions[currentUnitForPositions.name] = [];
     orgPositions[currentUnitForPositions.name].push({ title: n.trim(), employee: { name:'', education:'', experience:'', other:'' } });
     saveData(); showPositions(currentUnitForPositions); renderTree(); showToast('Pozicija dodana');
 }
 function deletePosition(index) {
-    if (!confirm('Obrisati ovu poziciju?')) return;
+    if (!confirm('Obrisati ovu poziciju?\nMožete koristiti Undo za povrat.')) return;
+    pushUndo();
     orgPositions[currentUnitForPositions.name].splice(index, 1);
     saveData(); showPositions(currentUnitForPositions); renderTree(); showToast('Pozicija obrisana');
 }
@@ -1455,6 +1499,7 @@ function handleDrop(e) {
     t.classList.remove('drag-over');
     const di = parseInt(t.dataset.index);
     if (draggedPositionIndex !== di) {
+        pushUndo();
         const p = orgPositions[currentUnitForPositions.name]; const drag = p[draggedPositionIndex]; p.splice(draggedPositionIndex, 1);
         p.splice(draggedPositionIndex < di ? di - 1 : di, 0, drag);
         saveData(); showPositions(currentUnitForPositions); renderTree();
@@ -1476,6 +1521,7 @@ function closeMoveModal() { document.getElementById('moveModal').classList.remov
 function confirmMovePosition() {
     const target = document.getElementById('targetUnitSelect').value;
     if (!target) { showToast('Odaberite odredišnu jedinicu'); return; }
+    pushUndo();
     orgPositions[currentUnitForPositions.name].splice(selectedPosition.index, 1);
     if (!orgPositions[target]) orgPositions[target] = [];
     orgPositions[target].push(selectedPosition.pos);
@@ -1501,6 +1547,7 @@ document.getElementById('employeeForm').addEventListener('submit', e => {
     e.preventDefault();
     const { unitName, index } = currentEmployeeCtx; if (!unitName && unitName !== '') return;
     const p = ensurePosObject_(unitName, index); const emp = posEmployee_(p);
+    pushUndo();
     emp.name = document.getElementById('empName').value.trim();
     emp.education = document.getElementById('empEducation').value.trim();
     emp.experience = document.getElementById('empExperience').value.trim();
@@ -1549,7 +1596,7 @@ async function handleImport(event) {
             for (let s of doc.getElementsByTagName('script')) { const st = s.textContent; if (st.includes('let organizationalStructure = {')) { try { const m = st.match(/let organizationalStructure = ({[\s\S]*?});[\s\S]*?let orgPositions = ({[\s\S]*?});/); if (m) { importedData = { structure: eval('(' + m[1] + ')'), positions: eval('(' + m[2] + ')') }; break; } } catch(ex) {} } }
         }
         if (importedData && importedData.structure && importedData.positions) {
-            if (confirm('Uvesti podatke? Ovo zamjenjuje trenutne podatke.')) { Object.assign(organizationalStructure, importedData.structure); orgPositions = importedData.positions; await saveData(); renderTree(); showToast('Podaci uvezeni'); }
+            if (confirm('Uvesti podatke? Ovo zamjenjuje trenutne podatke.\nMožete koristiti Undo za povrat.')) { pushUndo(); Object.assign(organizationalStructure, importedData.structure); orgPositions = importedData.positions; await saveData(); renderTree(); showToast('Podaci uvezeni'); }
         } else showToast('Nije pronađen validan format');
     } catch(e) { showToast('Greška: ' + e.message); }
 }
@@ -1587,6 +1634,17 @@ async function handleImport(event) {
 
 window.addEventListener('storage', e => {
     if (e.key && e.key.startsWith(STORAGE_KEY) && e.newValue) { loadData(); showToast('Ažurirano'); }
+});
+
+// Ctrl+Z za undo
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        // Ne reagiraj ako je focus u input/textarea
+        const tag = document.activeElement.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        e.preventDefault();
+        undo();
+    }
 });
 </script>
 </body>
