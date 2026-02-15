@@ -4,6 +4,7 @@
 
 const STORE_KEY = 'ORG_SCHEMA_JSON';
 const META_KEY  = 'ORG_SCHEMA_META';
+const CHANGE_LOG_KEY = 'ORG_CHANGE_LOG';
 
 function doGet() {
   ensureStoreInitialized_();
@@ -54,13 +55,44 @@ function saveSchema(payload) {
       savedBy: Session.getActiveUser().getEmail() || 'anonymous',
     };
 
-    props.setProperty(STORE_KEY, JSON.stringify(payload));
+    var schemaData = {
+      organizationalStructure: payload.organizationalStructure,
+      orgPositions: payload.orgPositions
+    };
+    props.setProperty(STORE_KEY, JSON.stringify(schemaData));
     props.setProperty(META_KEY, JSON.stringify(meta));
+
+    if (payload.changeLogEntry) {
+      appendChangeLog_(props, payload.changeLogEntry);
+    }
 
     return { ok: true, meta };
   } finally {
     lock.releaseLock();
   }
+}
+
+function getChangeLog() {
+  var props = PropertiesService.getScriptProperties();
+  var logStr = props.getProperty(CHANGE_LOG_KEY) || '[]';
+  var log = [];
+  try { log = JSON.parse(logStr); } catch (e) { log = []; }
+  return { ok: true, log: log };
+}
+
+function appendChangeLog_(props, entry) {
+  var logStr = props.getProperty(CHANGE_LOG_KEY) || '[]';
+  var log = [];
+  try { log = JSON.parse(logStr); } catch (e) { log = []; }
+
+  entry.savedAt = new Date().toISOString();
+  log.push(entry);
+
+  if (log.length > 100) {
+    log = log.slice(-100);
+  }
+
+  props.setProperty(CHANGE_LOG_KEY, JSON.stringify(log));
 }
 
 function resetSchemaToDefault() {

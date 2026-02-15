@@ -56,9 +56,10 @@
         body.mode-desktop .controls{padding:.75rem 1.5rem;}
         body.mode-desktop .controls .btn{padding:.6rem 1.1rem;font-size:.85rem;}
         body.mode-desktop .search-box{min-width:220px;flex:1;}
-        /* Mobile controls - compact bottom bar */
-        body.mode-mobile .controls{position:fixed;bottom:0;top:auto;left:0;right:0;z-index:190;padding:.5rem .75rem calc(.5rem + var(--safe-bottom));border-bottom:none;border-top:1.5px solid var(--border);box-shadow:0 -4px 16px rgba(0,0,0,.08);justify-content:center;gap:.4rem;background:white;}
-        body.mode-mobile .controls .zoom-btns,.controls .action-btns{display:flex;gap:.4rem;}
+        /* Mobile controls - compact bottom bar (1 row) */
+        body.mode-mobile .controls{position:fixed;bottom:0;top:auto;left:0;right:0;z-index:190;padding:.4rem .5rem calc(.4rem + var(--safe-bottom));border-bottom:none;border-top:1.5px solid var(--border);box-shadow:0 -4px 16px rgba(0,0,0,.08);justify-content:space-between;flex-wrap:nowrap;gap:.3rem;background:white;}
+        body.mode-mobile .controls .zoom-btns{display:flex;gap:.3rem;}
+        .controls .action-btns{display:flex;gap:.4rem;}
 
         .btn{border:none;border-radius:8px;font-family:'Work Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:.4rem;touch-action:manipulation;}
         .btn-primary{background:var(--primary);color:white;}
@@ -67,7 +68,7 @@
         .btn-secondary:active{background:var(--primary);color:white;}
         .btn-danger{background:var(--danger);color:white;}
         .btn-danger:active{background:#b91c1c;}
-        .btn-icon{width:40px;height:40px;border-radius:10px;justify-content:center;font-size:1.1rem;padding:0;flex-shrink:0;}
+        .btn-icon{width:44px;height:44px;border-radius:10px;justify-content:center;font-size:1.1rem;padding:0;flex-shrink:0;}
         .btn-small{padding:.4rem .75rem;font-size:.8rem;}
         .search-box{position:relative;flex:1;min-width:0;}
         .search-box input{width:100%;padding:.6rem .9rem .6rem 2.2rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Work Sans',sans-serif;font-size:.875rem;transition:border-color .2s;-webkit-appearance:none;}
@@ -79,7 +80,7 @@
 
         /* ── CONTAINER ── */
         .container{padding:2rem 1.5rem;overflow:hidden;transition:padding-bottom .2s;}
-        body.mode-mobile .container{padding-bottom:90px;}
+        body.mode-mobile .container{padding-bottom:calc(var(--controls-h, 60px) + 16px);}
 
         /* ── ZOOM WRAPPER — touch pan/pinch ── */
         #zoomWrapper{transform-origin:top left;will-change:transform;transition:transform .05s linear;}
@@ -142,7 +143,7 @@
 
         /* ── TOAST ── */
         .toast{position:fixed;bottom:calc(1.5rem + var(--safe-bottom));left:50%;transform:translateX(-50%);background:var(--primary);color:white;padding:.85rem 1.4rem;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:9999;font-size:.88rem;font-weight:500;white-space:nowrap;animation:toastIn .3s ease;}
-        body.mode-mobile .toast{bottom:calc(80px + var(--safe-bottom));}
+        body.mode-mobile .toast{bottom:calc(var(--controls-h, 60px) + 12px + var(--safe-bottom));}
         @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
         /* Unit selector */
@@ -150,22 +151,21 @@
         .unit-selector label{display:block;margin-bottom:.45rem;font-weight:500;font-size:.9rem;}
         .unit-selector select{width:100%;padding:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;-webkit-appearance:none;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right .75rem center;background-size:12px;}
 
-        /* Mobile FAB (quick add) */
-        .fab{display:none;position:fixed;bottom:calc(76px + var(--safe-bottom));right:1rem;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#1a1a1a;font-size:1.5rem;border:none;box-shadow:0 4px 16px rgba(212,175,55,.5);cursor:pointer;z-index:180;align-items:center;justify-content:center;transition:transform .2s;touch-action:manipulation;}
-        body.mode-mobile .fab{display:flex;}
-        .fab:active{transform:scale(.92);}
-
         /* Pinch hint */
         .pinch-hint{position:fixed;bottom:calc(130px + var(--safe-bottom));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:white;padding:.5rem 1rem;border-radius:20px;font-size:.78rem;z-index:500;pointer-events:none;opacity:0;transition:opacity .4s;white-space:nowrap;}
         .pinch-hint.show{opacity:1;}
 
         /* Mobile card adjustments */
         @media (max-width: 600px) {
-            .node-card{min-width:200px;max-width:280px;padding:1rem;}
-            .node-title{font-size:1rem;}
+            .node-card{min-width:clamp(170px,44vw,260px);max-width:clamp(220px,70vw,280px);padding:.9rem;}
+            .node-title{font-size:.95rem;}
             .node-badge{font-size:.65rem;}
-            .btn-small{padding:.35rem .6rem;font-size:.75rem;}
-            .children{gap:1.25rem;}
+            .btn-small{padding:.35rem .6rem;font-size:.75rem;min-height:36px;}
+            .children{gap:1rem;}
+        }
+        @media (max-width: 374px) {
+            .node-card{min-width:160px;max-width:210px;padding:.75rem;}
+            .node-title{font-size:.88rem;}
         }
 
         /* ── STATISTICS MODAL ── */
@@ -251,6 +251,52 @@
         /* Stats tabs scroll for many tabs */
         .stats-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
         .stats-tab{white-space:nowrap;flex-shrink:0;}
+
+        /* ── STATS TABS SCROLL INDICATORS ── */
+        .stats-tabs-wrapper{position:relative;}
+        .stats-tabs-wrapper::after{content:'';position:absolute;right:0;top:0;bottom:2px;width:36px;background:linear-gradient(90deg,transparent,white 80%);pointer-events:none;opacity:1;transition:opacity .3s;}
+        .stats-tabs-wrapper.scrolled-end::after{opacity:0;}
+        .stats-tabs-wrapper::before{content:'';position:absolute;left:0;top:0;bottom:2px;width:36px;background:linear-gradient(270deg,transparent,white 80%);pointer-events:none;opacity:0;transition:opacity .3s;z-index:1;}
+        .stats-tabs-wrapper.scrolled-start::before{opacity:1;}
+
+        /* ── MOBILE / DESKTOP VISIBILITY ── */
+        body.mode-mobile .desktop-only{display:none !important;}
+        body.mode-desktop .mobile-only{display:none !important;}
+        body.mode-mobile .hide-xs{display:none;}
+
+        /* ── OVERFLOW MENU (mobile hamburger) ── */
+        .overflow-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:240;}
+        .overflow-backdrop.active{display:block;}
+        .overflow-menu{display:none;position:fixed;bottom:0;left:0;right:0;background:white;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.15);padding:1rem 1rem calc(1rem + var(--safe-bottom));z-index:250;animation:slideUp .25s ease;}
+        .overflow-menu.active{display:block;}
+        .overflow-menu h4{font-family:'Crimson Pro',serif;font-size:1.1rem;color:var(--primary);margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1.5px solid var(--border);}
+        .overflow-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;}
+        .overflow-item{display:flex;flex-direction:column;align-items:center;gap:.3rem;padding:.75rem .5rem;border:1.5px solid var(--border);border-radius:10px;background:var(--bg-main);cursor:pointer;font-family:'Work Sans',sans-serif;font-size:.78rem;font-weight:500;color:var(--text-primary);transition:all .2s;min-height:48px;justify-content:center;}
+        .overflow-item:active{background:var(--primary);color:white;border-color:var(--primary);}
+        .overflow-item .ov-icon{font-size:1.3rem;}
+
+        /* ── SAVE MODAL ── */
+        .save-modal .modal-content{max-width:440px;}
+        .save-modal label{display:block;margin-bottom:.4rem;font-weight:500;font-size:.88rem;color:var(--text-primary);}
+        .save-modal input,.save-modal textarea{width:100%;padding:.7rem .9rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Work Sans',sans-serif;font-size:.95rem;margin-bottom:1rem;-webkit-appearance:none;}
+        .save-modal input:focus,.save-modal textarea:focus{outline:none;border-color:var(--primary);}
+        .save-modal textarea{resize:vertical;min-height:60px;}
+
+        /* ── CHANGES MODAL ── */
+        .changes-modal .modal-content{max-width:640px;max-height:94vh;}
+        .change-entry{background:var(--bg-main);border:1.5px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.75rem;}
+        .change-entry-header{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;}
+        .change-entry-who{font-weight:600;color:var(--primary);font-size:.9rem;}
+        .change-entry-when{font-size:.72rem;color:var(--text-secondary);white-space:nowrap;}
+        .change-entry-desc{font-size:.85rem;color:var(--text-primary);margin-bottom:.5rem;font-style:italic;}
+        .change-entry-list{font-size:.78rem;color:var(--text-secondary);}
+        .change-entry-list li{margin:.2rem 0;list-style:none;padding-left:1.2rem;position:relative;}
+        .change-entry-list li::before{content:'';position:absolute;left:0;top:.45rem;width:7px;height:7px;border-radius:50%;background:var(--border);}
+        .change-entry-list li.cl-add::before{background:#16a34a;}
+        .change-entry-list li.cl-edit::before{background:var(--accent);}
+        .change-entry-list li.cl-delete::before{background:var(--danger);}
+        .change-entry-list li.cl-reset::before{background:#6366f1;}
+        .changes-empty{text-align:center;padding:2rem;color:var(--text-secondary);font-size:.9rem;}
     </style>
 </head>
 <body class="mode-desktop">
@@ -293,25 +339,52 @@
 
     <!-- CONTROLS (desktop: top sticky | mobile: bottom fixed) -->
     <div class="controls" id="controlsBar">
-        <div class="action-btns" style="display:flex;gap:.4rem;flex-wrap:wrap;">
-            <button class="btn btn-primary btn-small" onclick="addRootUnit()">➕ <span class="hide-xs">Dodaj jedinicu</span></button>
-            <button class="btn btn-secondary btn-small" id="undoBtn" onclick="undo()" disabled title="Poništi (Ctrl+Z)">↩️ <span class="hide-xs">Undo</span></button>
-            <button class="btn btn-secondary btn-small" onclick="resetToDefaults()" title="Učitaj originalne podatke nanovo">🔄 <span class="hide-xs">Reset</span></button>
-            <button class="btn btn-secondary btn-small" onclick="openStatsModal()" title="Statistika, rangiranje, analiza">📊 <span class="hide-xs">Statistika</span></button>
-            <button class="btn btn-secondary btn-small" onclick="exportData()">💾 <span class="hide-xs">Spremi</span></button>
-            <button class="btn btn-secondary btn-small" onclick="importData()">📂 <span class="hide-xs">Učitaj</span></button>
+        <!-- Desktop: all buttons visible -->
+        <div class="action-btns desktop-only" style="display:flex;gap:.4rem;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-small" onclick="addRootUnit()">➕ Dodaj jedinicu</button>
+            <button class="btn btn-secondary btn-small" id="undoBtn" onclick="undo()" disabled title="Poništi (Ctrl+Z)">↩️ Undo</button>
+            <button class="btn btn-secondary btn-small" onclick="resetToDefaults()" title="Učitaj originalne podatke nanovo">🔄 Reset</button>
+            <button class="btn btn-secondary btn-small" onclick="openStatsModal()" title="Statistika, rangiranje, analiza">📊 Statistika</button>
+            <button class="btn btn-secondary btn-small" onclick="openSaveModal()">💾 Spremi</button>
+            <button class="btn btn-secondary btn-small" onclick="openChangesModal()">📋 Izmjene</button>
+            <button class="btn btn-secondary btn-small" onclick="importData()">📂 Učitaj</button>
         </div>
-        <div class="zoom-btns" style="display:flex;gap:.4rem;align-items:center;">
-            <button class="btn btn-secondary btn-icon" onclick="collapseAll()" title="Skupi sve">🔽</button>
-            <button class="btn btn-secondary btn-icon" onclick="expandAll()" title="Raširi sve">🔼</button>
+        <!-- Search box (always visible) -->
+        <div class="search-box" style="flex:1;min-width:0;">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Pretraži...">
+        </div>
+        <!-- Zoom controls (always visible) -->
+        <div class="zoom-btns" style="display:flex;gap:.3rem;align-items:center;">
             <button class="btn btn-secondary btn-icon" onclick="zoomOut()" title="Smanji">➖</button>
             <span class="zoom-level" id="zoomLabel">100%</span>
             <button class="btn btn-secondary btn-icon" onclick="zoomIn()" title="Povećaj">➕</button>
-            <button class="btn btn-secondary btn-icon" onclick="resetZoom()" title="Reset">⟳</button>
         </div>
-        <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Pretraži...">
+        <!-- Desktop: extra controls -->
+        <div class="desktop-only" style="display:flex;gap:.4rem;align-items:center;">
+            <button class="btn btn-secondary btn-icon" onclick="collapseAll()" title="Skupi sve">🔽</button>
+            <button class="btn btn-secondary btn-icon" onclick="expandAll()" title="Raširi sve">🔼</button>
+            <button class="btn btn-secondary btn-icon" onclick="resetZoom()" title="Reset zoom">⟳</button>
+        </div>
+        <!-- Mobile: hamburger menu trigger -->
+        <button class="btn btn-secondary btn-icon mobile-only" onclick="toggleOverflowMenu()" title="Više opcija">☰</button>
+    </div>
+
+    <!-- OVERFLOW MENU (mobile bottom sheet) -->
+    <div class="overflow-backdrop" id="overflowBackdrop" onclick="closeOverflowMenu()"></div>
+    <div class="overflow-menu" id="overflowMenu">
+        <h4>Opcije</h4>
+        <div class="overflow-grid">
+            <div class="overflow-item" onclick="addRootUnit();closeOverflowMenu()"><span class="ov-icon">➕</span>Dodaj jedinicu</div>
+            <div class="overflow-item" onclick="undo();closeOverflowMenu()"><span class="ov-icon">↩️</span>Undo</div>
+            <div class="overflow-item" onclick="resetToDefaults();closeOverflowMenu()"><span class="ov-icon">🔄</span>Reset</div>
+            <div class="overflow-item" onclick="openStatsModal();closeOverflowMenu()"><span class="ov-icon">📊</span>Statistika</div>
+            <div class="overflow-item" onclick="openSaveModal();closeOverflowMenu()"><span class="ov-icon">💾</span>Spremi</div>
+            <div class="overflow-item" onclick="openChangesModal();closeOverflowMenu()"><span class="ov-icon">📋</span>Izmjene</div>
+            <div class="overflow-item" onclick="importData();closeOverflowMenu()"><span class="ov-icon">📂</span>Učitaj</div>
+            <div class="overflow-item" onclick="collapseAll();closeOverflowMenu()"><span class="ov-icon">🔽</span>Skupi sve</div>
+            <div class="overflow-item" onclick="expandAll();closeOverflowMenu()"><span class="ov-icon">🔼</span>Raširi sve</div>
+            <div class="overflow-item" onclick="resetZoom();closeOverflowMenu()"><span class="ov-icon">⟳</span>Reset zoom</div>
         </div>
     </div>
 
@@ -323,9 +396,6 @@
             </div>
         </div>
     </div>
-
-    <!-- FAB (mobile) -->
-    <button class="fab" onclick="addRootUnit()" title="Dodaj jedinicu">➕</button>
 
     <!-- Pinch hint -->
     <div class="pinch-hint" id="pinchHint">🤏 Koristite dva prsta za zoom</div>
@@ -379,21 +449,46 @@
     <div class="modal stats-modal" id="statsModal">
         <div class="modal-content">
             <div class="modal-header"><span>📊 Statistika i Analiza</span><button class="close-btn" onclick="closeStatsModal()">×</button></div>
-            <div class="stats-tabs">
-                <button class="stats-tab active" onclick="switchStatsTab('overview',this)">Pregled</button>
-                <button class="stats-tab" onclick="switchStatsTab('ranking',this)">Rangiranje</button>
-                <button class="stats-tab" onclick="switchStatsTab('departments',this)">Odjeli</button>
-                <button class="stats-tab" onclick="switchStatsTab('comparison',this)">Podružnice</button>
-                <button class="stats-tab" onclick="switchStatsTab('education',this)">Obrazovanje</button>
-                <button class="stats-tab" onclick="switchStatsTab('workConditions',this)">Uslovi rada</button>
-                <button class="stats-tab" onclick="switchStatsTab('budget',this)">Budžet</button>
-                <button class="stats-tab" onclick="switchStatsTab('history',this)">Historija</button>
+            <div class="stats-tabs-wrapper" id="statsTabsWrapper">
+                <div class="stats-tabs" id="statsTabsScroll">
+                    <button class="stats-tab active" data-tab="overview" onclick="switchStatsTab('overview',this)">Pregled</button>
+                    <button class="stats-tab" data-tab="ranking" onclick="switchStatsTab('ranking',this)">Rangiranje</button>
+                    <button class="stats-tab" data-tab="departments" onclick="switchStatsTab('departments',this)">Odjeli</button>
+                    <button class="stats-tab" data-tab="comparison" onclick="switchStatsTab('comparison',this)">Podružnice</button>
+                    <button class="stats-tab" data-tab="education" onclick="switchStatsTab('education',this)">Obrazovanje</button>
+                    <button class="stats-tab" data-tab="workConditions" onclick="switchStatsTab('workConditions',this)">Uslovi rada</button>
+                    <button class="stats-tab" data-tab="budget" onclick="switchStatsTab('budget',this)">Budžet</button>
+                    <button class="stats-tab" data-tab="history" onclick="switchStatsTab('history',this)">Historija</button>
+                </div>
             </div>
             <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;">
                 <button class="btn btn-secondary btn-small" onclick="exportCSV()">📥 Export CSV</button>
                 <button class="btn btn-secondary btn-small" onclick="exportPDF()">📄 Export PDF</button>
             </div>
             <div id="statsContent"></div>
+        </div>
+    </div>
+
+    <!-- SAVE MODAL -->
+    <div class="modal save-modal" id="saveModal">
+        <div class="modal-content">
+            <div class="modal-header"><span>💾 Spremi izmjene</span><button class="close-btn" onclick="closeSaveModal()">×</button></div>
+            <label>Ime i prezime *</label>
+            <input type="text" id="saveUserName" placeholder="Ko vrši izmjene?" autocomplete="off">
+            <label>Opis izmjene (opciono)</label>
+            <textarea id="saveDescription" rows="3" placeholder="Šta je izmijenjeno? npr. Ažurirani koeficijenti za Sektor X"></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeSaveModal()">Odustani</button>
+                <button class="btn btn-primary" onclick="confirmSave()">Spremi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHANGES MODAL -->
+    <div class="modal changes-modal" id="changesModal">
+        <div class="modal-content">
+            <div class="modal-header"><span>📋 Izmjene</span><button class="close-btn" onclick="closeChangesModal()">×</button></div>
+            <div id="changesContent"><p class="changes-empty">Učitavanje...</p></div>
         </div>
     </div>
 
@@ -1270,10 +1365,13 @@ const collapsedNodes = new Set();
 // Change history
 const HISTORY_KEY = 'org_change_history_v1';
 let changeHistory = [];
+let changesSinceLastSave = [];
+const CHANGE_LOG_LOCAL_KEY = 'org_shared_change_log_v1';
 function loadHistory() { try { const h = localStorage.getItem(HISTORY_KEY); if (h) changeHistory = JSON.parse(h); } catch(e) { changeHistory = []; } }
 function saveHistory() { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(changeHistory.slice(-200))); } catch(e) {} }
 function logChange(type, msg) {
     changeHistory.push({ type, msg, time: new Date().toISOString() });
+    changesSinceLastSave.push({ type, msg });
     saveHistory();
 }
 
@@ -1316,12 +1414,14 @@ function updatePlatformUI() {
 function showPinchHint() {
     const h = document.getElementById('pinchHint');
     h.classList.add('show');
-    setTimeout(() => h.classList.remove('show'), 2800);
+    setTimeout(() => h.classList.remove('show'), 4000);
 }
 function updateHeaderHeight() {
     const hdr = document.querySelector('.header');
     const headerH = hdr ? hdr.offsetHeight : 88;
     document.documentElement.style.setProperty('--header-h', headerH + 'px');
+    const ctrl = document.getElementById('controlsBar');
+    if (ctrl) document.documentElement.style.setProperty('--controls-h', ctrl.offsetHeight + 'px');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1407,7 +1507,7 @@ document.addEventListener('touchmove', e => {
         const scale = dist / lastPinchDist;
         applyZoom(currentZoom * scale, px, py);
         lastPinchDist = dist;
-    } else if (isPointerDown && touches.length === 1 && !e.target.closest('.modal')) {
+    } else if (isPointerDown && touches.length === 1 && !e.target.closest('.modal') && !e.target.closest('.overflow-menu')) {
         e.preventDefault();
         const dx = panStartX - touches[0].clientX;
         const dy = panStartY - touches[0].clientY;
@@ -1467,18 +1567,132 @@ async function loadData() {
     try { const s = localStorage.getItem(STORAGE_KEY+'_structure'); const p = localStorage.getItem(STORAGE_KEY+'_positions'); if(s) organizationalStructure = JSON.parse(s); if(p) orgPositions = JSON.parse(p); } catch(e) {}
     renderTree(); setSaveStatus('Offline');
 }
-async function saveData() {
+async function saveData(changeLogEntry) {
     const isGAS = (typeof google !== 'undefined' && google.script && google.script.run);
     try {
         setSaveStatus('Spremanje...');
         if (isGAS) {
-            await new Promise((res, rej) => { google.script.run.withSuccessHandler(() => { setSaveStatus('Spremno'); res(); }).withFailureHandler(e => { setSaveStatus('Greška'); rej(e); }).saveSchema({ organizationalStructure, orgPositions }); });
+            const payload = { organizationalStructure, orgPositions };
+            if (changeLogEntry) payload.changeLogEntry = changeLogEntry;
+            await new Promise((res, rej) => { google.script.run.withSuccessHandler(() => { setSaveStatus('Spremno'); res(); }).withFailureHandler(e => { setSaveStatus('Greška'); rej(e); }).saveSchema(payload); });
             return;
         }
         localStorage.setItem(STORAGE_KEY+'_structure', JSON.stringify(organizationalStructure));
         localStorage.setItem(STORAGE_KEY+'_positions', JSON.stringify(orgPositions));
+        if (changeLogEntry) {
+            try {
+                const existing = JSON.parse(localStorage.getItem(CHANGE_LOG_LOCAL_KEY) || '[]');
+                changeLogEntry.savedAt = new Date().toISOString();
+                existing.push(changeLogEntry);
+                localStorage.setItem(CHANGE_LOG_LOCAL_KEY, JSON.stringify(existing.slice(-100)));
+            } catch(e2) {}
+        }
         setSaveStatus('Offline');
     } catch(e) { setSaveStatus('Greška'); }
+}
+
+// ════════════════════════════════════════════════════════════
+// SAVE MODAL (Spremi s atribucijom)
+// ════════════════════════════════════════════════════════════
+function openSaveModal() {
+    const modal = document.getElementById('saveModal');
+    const nameInput = document.getElementById('saveUserName');
+    const descInput = document.getElementById('saveDescription');
+    const savedName = localStorage.getItem('org_save_username') || '';
+    nameInput.value = savedName;
+    descInput.value = '';
+    modal.classList.add('active');
+    setTimeout(() => (savedName ? descInput : nameInput).focus(), 100);
+}
+function closeSaveModal() { document.getElementById('saveModal').classList.remove('active'); }
+async function confirmSave() {
+    const name = document.getElementById('saveUserName').value.trim();
+    if (!name) { showToast('Unesite ime i prezime'); document.getElementById('saveUserName').focus(); return; }
+    localStorage.setItem('org_save_username', name);
+    const desc = document.getElementById('saveDescription').value.trim();
+    const entry = {
+        savedBy: name,
+        description: desc || null,
+        changes: changesSinceLastSave.slice()
+    };
+    closeSaveModal();
+    await saveData(entry);
+    changesSinceLastSave = [];
+    showToast('Spremljeno');
+    logChange('save', 'Podaci spremljeni od: ' + name);
+}
+
+// ════════════════════════════════════════════════════════════
+// CHANGES MODAL (dijeljeni log izmjena)
+// ════════════════════════════════════════════════════════════
+function openChangesModal() {
+    document.getElementById('changesModal').classList.add('active');
+    document.getElementById('changesContent').innerHTML = '<p class="changes-empty">Učitavanje...</p>';
+    const isGAS = (typeof google !== 'undefined' && google.script && google.script.run);
+    if (isGAS) {
+        google.script.run
+            .withSuccessHandler(r => {
+                const log = (r && r.ok && r.log) ? r.log : [];
+                renderChangesLog(log);
+            })
+            .withFailureHandler(() => {
+                const log = JSON.parse(localStorage.getItem(CHANGE_LOG_LOCAL_KEY) || '[]');
+                renderChangesLog(log, true);
+            })
+            .getChangeLog();
+    } else {
+        const log = JSON.parse(localStorage.getItem(CHANGE_LOG_LOCAL_KEY) || '[]');
+        renderChangesLog(log, true);
+    }
+}
+function closeChangesModal() { document.getElementById('changesModal').classList.remove('active'); }
+
+function renderChangesLog(log, isOffline) {
+    const container = document.getElementById('changesContent');
+    if (!log || log.length === 0) {
+        container.innerHTML = '<p class="changes-empty">Nema zabilježenih izmjena.<br><br>Izmjene se bilježe automatski pri svakom spremanju.</p>';
+        return;
+    }
+    const reversed = [...log].reverse();
+    let html = '';
+    if (isOffline) {
+        html += '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:.6rem .8rem;margin-bottom:.75rem;font-size:.78rem;color:#92400e;">Offline — vidljive samo vaše promjene</div>';
+    }
+    html += '<div style="font-size:.78rem;color:var(--text-secondary);margin-bottom:.75rem;">' + log.length + ' snimanja zabilježeno</div>';
+    reversed.forEach(entry => {
+        const d = new Date(entry.savedAt);
+        const timeStr = d.toLocaleDateString('bs-BA') + ' ' + d.toLocaleTimeString('bs-BA', { hour: '2-digit', minute: '2-digit' });
+        html += '<div class="change-entry">';
+        html += '<div class="change-entry-header"><span class="change-entry-who">' + escHtml(entry.savedBy || 'Nepoznato') + '</span><span class="change-entry-when">' + timeStr + '</span></div>';
+        if (entry.description) {
+            html += '<div class="change-entry-desc">' + escHtml(entry.description) + '</div>';
+        }
+        if (entry.changes && entry.changes.length > 0) {
+            html += '<ul class="change-entry-list">';
+            entry.changes.forEach(ch => {
+                html += '<li class="cl-' + (ch.type || '') + '">' + escHtml(ch.msg || '') + '</li>';
+            });
+            html += '</ul>';
+        }
+        html += '</div>';
+    });
+    container.innerHTML = '<div class="stats-scroll" style="max-height:70vh;">' + html + '</div>';
+}
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ════════════════════════════════════════════════════════════
+// OVERFLOW MENU (mobile)
+// ════════════════════════════════════════════════════════════
+function toggleOverflowMenu() {
+    const menu = document.getElementById('overflowMenu');
+    const backdrop = document.getElementById('overflowBackdrop');
+    const isOpen = menu.classList.contains('active');
+    menu.classList.toggle('active', !isOpen);
+    backdrop.classList.toggle('active', !isOpen);
+}
+function closeOverflowMenu() {
+    document.getElementById('overflowMenu').classList.remove('active');
+    document.getElementById('overflowBackdrop').classList.remove('active');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1752,14 +1966,17 @@ async function handleImport(event) {
 // ════════════════════════════════════════════════════════════
 // CLOSE MODALS ON BACKDROP CLICK
 // ════════════════════════════════════════════════════════════
-['unitModal','positionModal','moveModal','employeeModal','platformModal'].forEach(id => {
-    document.getElementById(id).addEventListener('click', e => {
+['unitModal','positionModal','moveModal','employeeModal','platformModal','saveModal','changesModal'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', e => {
         if (e.target.id === id) {
             if (id === 'unitModal')       closeUnitModal();
             if (id === 'positionModal')   closePositionModal();
             if (id === 'moveModal')       closeMoveModal();
             if (id === 'employeeModal')   closeEmployeeModal();
             if (id === 'platformModal')   closePlatformModal();
+            if (id === 'saveModal')       closeSaveModal();
+            if (id === 'changesModal')    closeChangesModal();
         }
     });
 });
@@ -1789,13 +2006,29 @@ window.addEventListener('storage', e => {
 // STATISTICS & ANALYSIS
 // ════════════════════════════════════════════════════════════
 let currentStatsTab = 'overview';
-function openStatsModal() { document.getElementById('statsModal').classList.add('active'); currentStatsTab = 'overview'; renderStatsTab(); }
+function openStatsModal() {
+    document.getElementById('statsModal').classList.add('active');
+    currentStatsTab = 'overview';
+    renderStatsTab();
+    setTimeout(initStatsTabScroll, 50);
+}
 function closeStatsModal() { document.getElementById('statsModal').classList.remove('active'); }
 function switchStatsTab(tab, btn) {
     currentStatsTab = tab;
     document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
-    if (btn) btn.classList.add('active');
+    if (btn) { btn.classList.add('active'); btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
     renderStatsTab();
+}
+function initStatsTabScroll() {
+    const scrollEl = document.getElementById('statsTabsScroll');
+    const wrapper = document.getElementById('statsTabsWrapper');
+    if (!scrollEl || !wrapper) return;
+    const update = () => {
+        wrapper.classList.toggle('scrolled-start', scrollEl.scrollLeft > 10);
+        wrapper.classList.toggle('scrolled-end', scrollEl.scrollLeft + scrollEl.clientWidth >= scrollEl.scrollWidth - 10);
+    };
+    scrollEl.addEventListener('scroll', update);
+    update();
 }
 
 function getAllPositions() {
@@ -2393,8 +2626,8 @@ function exportPDF() {
     logChange('export', 'Generisan PDF izvještaj');
 }
 
-// Add statsModal to backdrop click list
-document.getElementById('statsModal').addEventListener('click', e => { if (e.target.id === 'statsModal') closeStatsModal(); });
+// Add remaining modals to backdrop click list
+['statsModal'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('click', e => { if (e.target.id === id) closeStatsModal(); }); });
 
 // Ctrl+Z za undo
 document.addEventListener('keydown', e => {
