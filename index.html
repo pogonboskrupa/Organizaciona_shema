@@ -385,6 +385,8 @@
             <div class="overflow-item" onclick="collapseAll();closeOverflowMenu()"><span class="ov-icon">🔽</span>Skupi sve</div>
             <div class="overflow-item" onclick="expandAll();closeOverflowMenu()"><span class="ov-icon">🔼</span>Raširi sve</div>
             <div class="overflow-item" onclick="resetZoom();closeOverflowMenu()"><span class="ov-icon">⟳</span>Reset zoom</div>
+            <div class="overflow-item" onclick="exportDocument();closeOverflowMenu()"><span class="ov-icon">📑</span>Dokument</div>
+            <div class="overflow-item" onclick="exportPravilnik();closeOverflowMenu()"><span class="ov-icon">📜</span>Pravilnik</div>
         </div>
     </div>
 
@@ -486,6 +488,8 @@
             <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;">
                 <button class="btn btn-secondary btn-small" onclick="exportCSV()">📥 Export CSV</button>
                 <button class="btn btn-secondary btn-small" onclick="exportPDF()">📄 Export PDF</button>
+                <button class="btn btn-secondary btn-small" onclick="exportDocument()">📑 Dokument</button>
+                <button class="btn btn-secondary btn-small" onclick="exportPravilnik()">📜 Pravilnik</button>
             </div>
             <div id="statsContent"></div>
         </div>
@@ -2168,6 +2172,299 @@ function countNodes(node) {
 function getDepth(node) {
     if (!node.children || node.children.length === 0) return 0;
     return 1 + Math.max(...node.children.map(getDepth));
+}
+
+// ════════════════════════════════════════════════════════════
+// TREE WALKER HELPER
+// ════════════════════════════════════════════════════════════
+function walkOrgTree(node, callback, depth) {
+    depth = depth || 0;
+    callback(node, depth);
+    if (node.children) node.children.forEach(ch => walkOrgTree(ch, callback, depth + 1));
+}
+
+// ════════════════════════════════════════════════════════════
+// EXPORT: SUBLIMIRAN DOKUMENT
+// ════════════════════════════════════════════════════════════
+function exportDocument() {
+    const allPos = getAllPositions();
+    const withKoef = allPos.filter(p => p.koef !== null && p.koef !== undefined);
+    const avgK = withKoef.length ? (withKoef.reduce((s,p) => s + p.koef, 0) / withKoef.length).toFixed(2) : '–';
+    const popunjene = allPos.filter(p => p.employee && p.employee.name).length;
+    const deptCount = Object.keys(orgPositions).length;
+    const date = new Date().toLocaleDateString('bs-BA');
+    const time = new Date().toLocaleTimeString('bs-BA', { hour:'2-digit', minute:'2-digit' });
+
+    const pw = window.open('', '_blank');
+    pw.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pregled organizacijske šeme</title>
+    <style>
+        body{font-family:Arial,sans-serif;padding:2rem;color:#333;font-size:11px;line-height:1.5;}
+        h1{color:#1a4d2e;font-size:18px;border-bottom:2px solid #1a4d2e;padding-bottom:8px;margin-bottom:4px;}
+        h2{color:#1a4d2e;font-size:14px;margin-top:24px;margin-bottom:6px;border-left:4px solid #1a4d2e;padding-left:8px;}
+        h3{color:#2d6a4f;font-size:12px;margin-top:18px;margin-bottom:4px;border-left:3px solid #d4af37;padding-left:8px;}
+        .subtitle{color:#666;font-size:10px;margin-bottom:16px;}
+        .summary{display:flex;gap:15px;margin:12px 0 20px;flex-wrap:wrap;}
+        .s-card{background:#f5f7fa;padding:10px 15px;border-radius:6px;border:1px solid #e0e4e8;text-align:center;}
+        .s-num{font-size:20px;font-weight:700;color:#1a4d2e;}
+        .s-lbl{font-size:9px;color:#666;}
+        table{width:100%;border-collapse:collapse;margin-top:4px;margin-bottom:12px;page-break-inside:auto;}
+        th{background:#1a4d2e;color:white;padding:4px 5px;text-align:left;font-size:9px;}
+        td{padding:3px 5px;border-bottom:1px solid #e0e4e8;font-size:10px;}
+        tr:nth-child(even) td{background:#f9fafb;}
+        .branch-tag{color:#6366f1;font-style:italic;font-size:9px;}
+        .struct-list{margin:8px 0 16px;font-size:11px;}
+        .struct-item{padding:2px 0;}
+        .struct-l0{font-weight:700;color:#1a4d2e;}
+        .struct-l1{padding-left:20px;font-weight:600;}
+        .struct-l2{padding-left:40px;color:#555;}
+        .footer{margin-top:30px;text-align:center;font-size:9px;color:#999;border-top:1px solid #e0e4e8;padding-top:10px;}
+        .recap{background:#f0faf3;border:1px solid #a7f3d0;border-radius:6px;padding:12px;margin-top:20px;font-size:11px;}
+        .recap b{color:#1a4d2e;}
+        @media print{.no-print{display:none;} h2{page-break-before:auto;} table{page-break-inside:auto;} tr{page-break-inside:avoid;}}
+    </style></head><body>
+    <h1>PREGLED ORGANIZACIJSKE ŠEME I SISTEMATIZACIJE RADNIH MJESTA</h1>
+    <p class="subtitle">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — ${date} ${time}</p>
+    <button class="no-print" onclick="window.print()" style="padding:8px 16px;background:#1a4d2e;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:15px;">🖨️ Štampaj / Spremi PDF</button>
+    <div class="summary">
+        <div class="s-card"><div class="s-num">${allPos.length}</div><div class="s-lbl">Ukupno pozicija</div></div>
+        <div class="s-card"><div class="s-num">${deptCount}</div><div class="s-lbl">Org. jedinica</div></div>
+        <div class="s-card"><div class="s-num">${avgK}</div><div class="s-lbl">Prosj. koeficijent</div></div>
+        <div class="s-card"><div class="s-num">${popunjene}</div><div class="s-lbl">Popunjenih mjesta</div></div>
+    </div>`);
+
+    // Organizational structure overview
+    pw.document.write('<h2>ORGANIZACIJSKA STRUKTURA</h2><div class="struct-list">');
+    let unitNum = 0;
+    walkOrgTree(organizationalStructure, (node, depth) => {
+        unitNum++;
+        const posCount = (orgPositions[node.name] || []).length;
+        const cls = depth === 0 ? 'struct-l0' : depth === 1 ? 'struct-l1' : 'struct-l2';
+        pw.document.write(`<div class="struct-item ${cls}">${unitNum}. ${node.name}${posCount > 0 ? ' <span style="color:#999;">(' + posCount + ' pozicija)</span>' : ''}</div>`);
+    });
+    pw.document.write('</div>');
+
+    // Detailed positions per unit
+    pw.document.write('<h2>SISTEMATIZACIJA RADNIH MJESTA PO ORGANIZACIONIM JEDINICAMA</h2>');
+    let totalPositions = 0;
+    walkOrgTree(organizationalStructure, (node, depth) => {
+        const positions = (orgPositions[node.name] || []).filter(p => p && typeof p === 'object');
+        if (!positions.length) return;
+        totalPositions += positions.length;
+        const tag = depth === 0 ? 'h2' : 'h3';
+        pw.document.write(`<${tag}>${node.name} (${positions.length})</${tag}>`);
+        pw.document.write('<table><thead><tr><th>#</th><th>Naziv radnog mjesta</th><th>Stepen</th><th>Koef.</th><th>UR%</th><th>Ukupno</th><th>Napomena</th><th>Radnik</th></tr></thead><tbody>');
+        positions.forEach((p, i) => {
+            const emp = p.employee || {};
+            const branchStr = p.branch ? '<br><span class="branch-tag">📍 ' + p.branch.replace(/^PODRUŽNICA\s+/i, '').replace(/^POGON\s+/i, 'Pogon ') + '</span>' : '';
+            pw.document.write(`<tr>
+                <td>${i+1}</td>
+                <td>${p.title||''}${branchStr}</td>
+                <td>${p.stepen||''}</td>
+                <td>${p.koef !== null && p.koef !== undefined ? p.koef : '–'}</td>
+                <td>${p.usloviRada > 0 ? p.usloviRada + '%' : '–'}</td>
+                <td>${p.ukupno || p.koef || '–'}</td>
+                <td>${p.napomena||''}</td>
+                <td>${emp.name||'–'}</td>
+            </tr>`);
+        });
+        pw.document.write('</tbody></table>');
+    });
+
+    // Recap
+    const sumKoef = withKoef.reduce((s,p) => s + (p.ukupno || p.koef || 0), 0).toFixed(2);
+    pw.document.write(`<div class="recap">
+        <b>REKAPITULACIJA:</b><br>
+        Ukupan broj sistematizovanih radnih mjesta: <b>${totalPositions}</b><br>
+        Organizacionih jedinica: <b>${deptCount}</b><br>
+        Popunjenih radnih mjesta: <b>${popunjene}</b> od ${totalPositions} (${totalPositions > 0 ? Math.round(popunjene/totalPositions*100) : 0}%)<br>
+        Prosječni koeficijent: <b>${avgK}</b> | Suma koeficijenata: <b>${sumKoef}</b>
+    </div>`);
+
+    pw.document.write(`<div class="footer">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — Pregled organizacijske šeme — ${date}</div></body></html>`);
+    pw.document.close();
+    showToast('Dokument otvoren u novom tabu');
+    logChange('export', 'Generisan sublimiran dokument');
+}
+
+// ════════════════════════════════════════════════════════════
+// EXPORT: PRAVILNIK O SISTEMATIZACIJI
+// ════════════════════════════════════════════════════════════
+function exportPravilnik() {
+    const allPos = getAllPositions();
+    const deptCount = Object.keys(orgPositions).length;
+    const date = new Date().toLocaleDateString('bs-BA');
+    const year = new Date().getFullYear();
+
+    const pw = window.open('', '_blank');
+    pw.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pravilnik o sistematizaciji</title>
+    <style>
+        body{font-family:'Times New Roman',serif;padding:2.5rem 3rem;color:#222;font-size:12px;line-height:1.6;}
+        .header-block{text-align:center;margin-bottom:30px;}
+        .org-name{font-size:14px;font-weight:700;letter-spacing:1px;}
+        .org-sub{font-size:11px;color:#555;margin-top:2px;}
+        .legal-basis{font-size:11px;color:#444;text-align:justify;margin:20px 0;line-height:1.7;}
+        .doc-title{font-size:16px;font-weight:700;text-align:center;margin:25px 0 5px;letter-spacing:1.5px;}
+        .doc-subtitle{font-size:13px;font-weight:600;text-align:center;margin-bottom:25px;color:#333;}
+        .section-title{font-size:13px;font-weight:700;margin:28px 0 14px;padding:6px 0;border-bottom:1.5px solid #1a4d2e;color:#1a4d2e;}
+        .clan{margin:14px 0;text-align:justify;}
+        .clan-num{font-weight:700;text-align:center;margin-bottom:4px;font-size:12px;}
+        .unit-title{font-weight:700;margin:16px 0 6px;font-size:11px;color:#1a4d2e;border-left:3px solid #1a4d2e;padding-left:8px;}
+        .unit-title-l2{font-weight:600;margin:12px 0 4px;font-size:11px;color:#2d6a4f;border-left:3px solid #d4af37;padding-left:8px;}
+        table{width:100%;border-collapse:collapse;margin:4px 0 14px;page-break-inside:auto;font-size:10px;}
+        th{background:#1a4d2e;color:white;padding:4px 5px;text-align:left;font-size:9px;font-weight:600;}
+        td{padding:3px 5px;border:1px solid #ddd;}
+        tr:nth-child(even) td{background:#fafafa;}
+        .ol-units{margin:8px 0;padding-left:20px;}
+        .ol-units li{margin:3px 0;font-size:11px;}
+        .signature-block{margin-top:50px;display:flex;justify-content:space-between;}
+        .sig-left{font-size:10px;color:#555;}
+        .sig-right{text-align:center;font-size:11px;}
+        .sig-line{border-top:1px solid #333;margin-top:40px;padding-top:4px;min-width:200px;}
+        .footer-doc{margin-top:40px;text-align:center;font-size:9px;color:#999;border-top:1px solid #ddd;padding-top:8px;}
+        .recap-box{background:#f5f7fa;border:1px solid #e0e4e8;padding:10px 14px;border-radius:4px;margin:14px 0;font-size:11px;}
+        @media print{.no-print{display:none;} .section-title{page-break-before:auto;} table{page-break-inside:auto;} tr{page-break-inside:avoid;} .signature-block{page-break-before:auto;}}
+    </style></head><body>`);
+
+    // ── HEADER ──
+    pw.document.write(`
+    <div class="header-block">
+        <div class="org-name">ŠPD "UNSKO-SANSKE ŠUME" d.o.o. BOSANSKA KRUPA</div>
+        <div class="org-sub">UPRAVA DRUŠTVA</div>
+    </div>
+    <div class="legal-basis">
+        Na osnovu člana 56. i člana 61. Statuta ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa,
+        te u skladu sa odredbama Zakona o radu ("Službene novine Federacije BiH"),
+        Uprava Društva na sjednici održanoj dana __________ ${year}. godine, donosi:
+    </div>
+    <div class="doc-title">PRAVILNIK</div>
+    <div class="doc-subtitle">O UNUTRAŠNJOJ ORGANIZACIJI I SISTEMATIZACIJI RADNIH MJESTA</div>
+    <button class="no-print" onclick="window.print()" style="padding:8px 16px;background:#1a4d2e;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:20px;display:block;margin-left:auto;margin-right:auto;">🖨️ Štampaj / Spremi PDF</button>
+    `);
+
+    // ── I - OPĆE ODREDBE ──
+    let clan = 0;
+    function nextClan() { clan++; return `<div class="clan-num">Član ${clan}.</div>`; }
+
+    pw.document.write('<div class="section-title">I - OPĆE ODREDBE</div>');
+
+    pw.document.write(`<div class="clan">${nextClan()}
+        Ovim Pravilnikom utvrđuje se unutrašnja organizacija, sistematizacija radnih mjesta,
+        potreban stepen stručne spreme, koeficijenti za obračun plaća, uslovi rada i broj izvršilaca
+        u ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa (u daljem tekstu: Društvo).
+    </div>`);
+
+    pw.document.write(`<div class="clan">${nextClan()}
+        Unutrašnja organizacija Društva zasniva se na principima racionalnosti, funkcionalnosti
+        i efikasnosti u obavljanju djelatnosti šumarstva, lovstva, drvne industrije i srodnih djelatnosti.
+    </div>`);
+
+    pw.document.write(`<div class="clan">${nextClan()}
+        Izrazi koji se koriste u ovom Pravilniku za označavanje muškog ili ženskog roda
+        podrazumijevaju oba roda.
+    </div>`);
+
+    // ── II - UNUTRAŠNJA ORGANIZACIJA ──
+    pw.document.write('<div class="section-title">II - UNUTRAŠNJA ORGANIZACIJA</div>');
+
+    // Collect all units
+    const unitList = [];
+    walkOrgTree(organizationalStructure, (node, depth) => { unitList.push({ name: node.name, depth, childCount: node.children ? node.children.length : 0 }); });
+
+    pw.document.write(`<div class="clan">${nextClan()}
+        Društvo je organizovano kroz sljedeće organizacione jedinice:
+        <ol class="ol-units">${unitList.map(u => '<li>' + u.name + '</li>').join('')}</ol>
+    </div>`);
+
+    pw.document.write(`<div class="clan">${nextClan()}
+        Organizacione jedinice iz prethodnog člana obavljaju poslove iz svog djelokruga rada
+        utvrđene ovim Pravilnikom i drugim aktima Društva.
+    </div>`);
+
+    // Unit descriptions
+    const levelNames = { 0: 'sjedište Društva', 1: 'organizaciona jedinica', 2: 'unutrašnja organizaciona jedinica' };
+    unitList.forEach(u => {
+        const posCount = (orgPositions[u.name] || []).length;
+        const childInfo = u.childCount > 0 ? ` Ova jedinica ima ${u.childCount} podređenih organizacionih jedinica.` : '';
+        pw.document.write(`<div class="clan">${nextClan()}
+            <b>${u.name}</b> je ${levelNames[u.depth] || 'organizaciona jedinica'} sa sistematizovanih <b>${posCount}</b> radnih mjesta.${childInfo}
+        </div>`);
+    });
+
+    // ── III - SISTEMATIZACIJA RADNIH MJESTA ──
+    pw.document.write('<div class="section-title">III - SISTEMATIZACIJA RADNIH MJESTA</div>');
+
+    pw.document.write(`<div class="clan">${nextClan()}
+        Sistematizacijom radnih mjesta utvrđuju se: nazivi radnih mjesta, potreban stepen stručne spreme,
+        koeficijenti za obračun plaća, procent uvećanja za uslove rada i broj izvršilaca za svako radno mjesto.
+    </div>`);
+
+    let grandTotal = 0;
+    walkOrgTree(organizationalStructure, (node, depth) => {
+        const positions = (orgPositions[node.name] || []).filter(p => p && typeof p === 'object');
+        if (!positions.length) return;
+        grandTotal += positions.length;
+
+        pw.document.write(`<div class="clan">${nextClan()}`);
+        const cls = depth <= 1 ? 'unit-title' : 'unit-title-l2';
+        pw.document.write(`<div class="${cls}">${node.name}</div>`);
+        pw.document.write(`Sistematizacija radnih mjesta u organizacionoj jedinici ${node.name}:`);
+        pw.document.write(`<table><thead><tr><th>R.br.</th><th>Naziv radnog mjesta</th><th>Stepen stručne spreme</th><th>Koeficijent</th><th>Uslovi rada</th><th>Ukupno</th><th>Br. izvršilaca</th></tr></thead><tbody>`);
+        positions.forEach((p, i) => {
+            const branchNote = p.branch ? ' (' + p.branch.replace(/^PODRUŽNICA\s+/i, '').replace(/^POGON\s+/i, 'Pogon ') + ')' : '';
+            pw.document.write(`<tr>
+                <td style="text-align:center;">${i+1}</td>
+                <td>${p.title||''}${branchNote}</td>
+                <td>${p.stepen||'–'}</td>
+                <td style="text-align:center;">${p.koef !== null && p.koef !== undefined ? p.koef : (p.napomena || 'Ugovor')}</td>
+                <td style="text-align:center;">${p.usloviRada > 0 ? p.usloviRada + '%' : '–'}</td>
+                <td style="text-align:center;">${p.ukupno || p.koef || '–'}</td>
+                <td style="text-align:center;">1</td>
+            </tr>`);
+        });
+        pw.document.write(`<tr style="font-weight:700;background:#f0faf3;"><td colspan="6" style="text-align:right;">Ukupno ${node.name}:</td><td style="text-align:center;">${positions.length}</td></tr>`);
+        pw.document.write('</tbody></table></div>');
+    });
+
+    // Recap
+    pw.document.write(`<div class="recap-box">
+        <b>REKAPITULACIJA:</b> Ukupan broj sistematizovanih radnih mjesta: <b>${grandTotal}</b><br>
+        Organizacionih jedinica: <b>${unitList.length}</b>
+    </div>`);
+
+    // ── IV - PRELAZNE I ZAVRŠNE ODREDBE ──
+    pw.document.write('<div class="section-title">IV - PRELAZNE I ZAVRŠNE ODREDBE</div>');
+
+    pw.document.write(`<div class="clan">${nextClan()}
+        Stupanjem na snagu ovog Pravilnika prestaje da važi prethodni Pravilnik o unutrašnjoj
+        organizaciji i sistematizaciji radnih mjesta.
+    </div>`);
+
+    pw.document.write(`<div class="clan">${nextClan()}
+        Izmjene i dopune ovog Pravilnika vrše se na način i po postupku predviđenom za
+        njegovo donošenje.
+    </div>`);
+
+    pw.document.write(`<div class="clan">${nextClan()}
+        Ovaj Pravilnik stupa na snagu danom donošenja, a primjenjuje se od __________ ${year}. godine.
+    </div>`);
+
+    // Signature
+    pw.document.write(`<div class="signature-block">
+        <div class="sig-left">
+            Broj: ________/${year}<br>
+            Datum: ${date}<br>
+            Mjesto: Bosanska Krupa
+        </div>
+        <div class="sig-right">
+            DIREKTOR – PREDSJEDNIK UPRAVE
+            <div class="sig-line">_________________________________</div>
+        </div>
+    </div>`);
+
+    pw.document.write(`<div class="footer-doc">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — Pravilnik o unutrašnjoj organizaciji i sistematizaciji radnih mjesta</div></body></html>`);
+    pw.document.close();
+    showToast('Pravilnik otvoren u novom tabu');
+    logChange('export', 'Generisan Pravilnik o sistematizaciji');
 }
 
 function renderStatsTab() {
