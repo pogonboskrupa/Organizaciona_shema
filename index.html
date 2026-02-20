@@ -2184,6 +2184,27 @@ function walkOrgTree(node, callback, depth) {
 }
 
 // ════════════════════════════════════════════════════════════
+// HELPER: Open HTML in new tab or download as fallback
+// ════════════════════════════════════════════════════════════
+function openHtmlExport(htmlString, filename) {
+    try {
+        const pw = window.open('', '_blank');
+        if (pw && pw.document) {
+            pw.document.write(htmlString);
+            pw.document.close();
+            return;
+        }
+    } catch(e) { /* sandbox blocked */ }
+    const blob = new Blob([htmlString], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'export.html';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════════════════════
 // EXPORT: SUBLIMIRAN DOKUMENT
 // ════════════════════════════════════════════════════════════
 function exportDocument() {
@@ -2195,8 +2216,7 @@ function exportDocument() {
     const date = new Date().toLocaleDateString('bs-BA');
     const time = new Date().toLocaleTimeString('bs-BA', { hour:'2-digit', minute:'2-digit' });
 
-    const pw = window.open('', '_blank');
-    pw.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pregled organizacijske šeme</title>
+    let h = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pregled organizacijske šeme</title>
     <style>
         body{font-family:Arial,sans-serif;padding:2rem;color:#333;font-size:11px;line-height:1.5;}
         h1{color:#1a4d2e;font-size:18px;border-bottom:2px solid #1a4d2e;padding-bottom:8px;margin-bottom:4px;}
@@ -2224,39 +2244,39 @@ function exportDocument() {
     </style></head><body>
     <h1>PREGLED ORGANIZACIJSKE ŠEME I SISTEMATIZACIJE RADNIH MJESTA</h1>
     <p class="subtitle">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — ${date} ${time}</p>
-    <button class="no-print" onclick="window.print()" style="padding:8px 16px;background:#1a4d2e;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:15px;">🖨️ Štampaj / Spremi PDF</button>
+    <button class="no-print" onclick="window.print()" style="padding:8px 16px;background:#1a4d2e;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:15px;">Štampaj / Spremi PDF</button>
     <div class="summary">
         <div class="s-card"><div class="s-num">${allPos.length}</div><div class="s-lbl">Ukupno pozicija</div></div>
         <div class="s-card"><div class="s-num">${deptCount}</div><div class="s-lbl">Org. jedinica</div></div>
         <div class="s-card"><div class="s-num">${avgK}</div><div class="s-lbl">Prosj. koeficijent</div></div>
         <div class="s-card"><div class="s-num">${popunjene}</div><div class="s-lbl">Popunjenih mjesta</div></div>
-    </div>`);
+    </div>`;
 
     // Organizational structure overview
-    pw.document.write('<h2>ORGANIZACIJSKA STRUKTURA</h2><div class="struct-list">');
+    h += '<h2>ORGANIZACIJSKA STRUKTURA</h2><div class="struct-list">';
     let unitNum = 0;
     walkOrgTree(organizationalStructure, (node, depth) => {
         unitNum++;
         const posCount = (orgPositions[node.name] || []).length;
         const cls = depth === 0 ? 'struct-l0' : depth === 1 ? 'struct-l1' : 'struct-l2';
-        pw.document.write(`<div class="struct-item ${cls}">${unitNum}. ${node.name}${posCount > 0 ? ' <span style="color:#999;">(' + posCount + ' pozicija)</span>' : ''}</div>`);
+        h += `<div class="struct-item ${cls}">${unitNum}. ${node.name}${posCount > 0 ? ' <span style="color:#999;">(' + posCount + ' pozicija)</span>' : ''}</div>`;
     });
-    pw.document.write('</div>');
+    h += '</div>';
 
     // Detailed positions per unit
-    pw.document.write('<h2>SISTEMATIZACIJA RADNIH MJESTA PO ORGANIZACIONIM JEDINICAMA</h2>');
+    h += '<h2>SISTEMATIZACIJA RADNIH MJESTA PO ORGANIZACIONIM JEDINICAMA</h2>';
     let totalPositions = 0;
     walkOrgTree(organizationalStructure, (node, depth) => {
         const positions = (orgPositions[node.name] || []).filter(p => p && typeof p === 'object');
         if (!positions.length) return;
         totalPositions += positions.length;
         const tag = depth === 0 ? 'h2' : 'h3';
-        pw.document.write(`<${tag}>${node.name} (${positions.length})</${tag}>`);
-        pw.document.write('<table><thead><tr><th>#</th><th>Naziv radnog mjesta</th><th>Stepen</th><th>Koef.</th><th>UR%</th><th>Ukupno</th><th>Napomena</th><th>Radnik</th></tr></thead><tbody>');
+        h += `<${tag}>${node.name} (${positions.length})</${tag}>`;
+        h += '<table><thead><tr><th>#</th><th>Naziv radnog mjesta</th><th>Stepen</th><th>Koef.</th><th>UR%</th><th>Ukupno</th><th>Napomena</th><th>Radnik</th></tr></thead><tbody>';
         positions.forEach((p, i) => {
             const emp = p.employee || {};
-            const branchStr = p.branch ? '<br><span class="branch-tag">📍 ' + p.branch.replace(/^PODRUŽNICA\s+/i, '').replace(/^POGON\s+/i, 'Pogon ') + '</span>' : '';
-            pw.document.write(`<tr>
+            const branchStr = p.branch ? '<br><span class="branch-tag">' + p.branch.replace(/^PODRUŽNICA\s+/i, '').replace(/^POGON\s+/i, 'Pogon ') + '</span>' : '';
+            h += `<tr>
                 <td>${i+1}</td>
                 <td>${p.title||''}${branchStr}</td>
                 <td>${p.stepen||''}</td>
@@ -2265,24 +2285,24 @@ function exportDocument() {
                 <td>${p.ukupno || p.koef || '–'}</td>
                 <td>${p.napomena||''}</td>
                 <td>${emp.name||'–'}</td>
-            </tr>`);
+            </tr>`;
         });
-        pw.document.write('</tbody></table>');
+        h += '</tbody></table>';
     });
 
     // Recap
     const sumKoef = withKoef.reduce((s,p) => s + (p.ukupno || p.koef || 0), 0).toFixed(2);
-    pw.document.write(`<div class="recap">
+    h += `<div class="recap">
         <b>REKAPITULACIJA:</b><br>
         Ukupan broj sistematizovanih radnih mjesta: <b>${totalPositions}</b><br>
         Organizacionih jedinica: <b>${deptCount}</b><br>
         Popunjenih radnih mjesta: <b>${popunjene}</b> od ${totalPositions} (${totalPositions > 0 ? Math.round(popunjene/totalPositions*100) : 0}%)<br>
         Prosječni koeficijent: <b>${avgK}</b> | Suma koeficijenata: <b>${sumKoef}</b>
-    </div>`);
+    </div>`;
 
-    pw.document.write(`<div class="footer">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — Pregled organizacijske šeme — ${date}</div></body></html>`);
-    pw.document.close();
-    showToast('Dokument otvoren u novom tabu');
+    h += `<div class="footer">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — Pregled organizacijske šeme — ${date}</div></body></html>`;
+    openHtmlExport(h, 'organizacijska_shema_dokument.html');
+    showToast('Dokument generisan');
     logChange('export', 'Generisan sublimiran dokument');
 }
 
@@ -2295,8 +2315,7 @@ function exportPravilnik() {
     const date = new Date().toLocaleDateString('bs-BA');
     const year = new Date().getFullYear();
 
-    const pw = window.open('', '_blank');
-    pw.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pravilnik o sistematizaciji</title>
+    let h = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pravilnik o sistematizaciji</title>
     <style>
         body{font-family:'Times New Roman',serif;padding:2.5rem 3rem;color:#222;font-size:12px;line-height:1.6;}
         .header-block{text-align:center;margin-bottom:30px;}
@@ -2323,10 +2342,10 @@ function exportPravilnik() {
         .footer-doc{margin-top:40px;text-align:center;font-size:9px;color:#999;border-top:1px solid #ddd;padding-top:8px;}
         .recap-box{background:#f5f7fa;border:1px solid #e0e4e8;padding:10px 14px;border-radius:4px;margin:14px 0;font-size:11px;}
         @media print{.no-print{display:none;} .section-title{page-break-before:auto;} table{page-break-inside:auto;} tr{page-break-inside:avoid;} .signature-block{page-break-before:auto;}}
-    </style></head><body>`);
+    </style></head><body>`;
 
     // ── HEADER ──
-    pw.document.write(`
+    h += `
     <div class="header-block">
         <div class="org-name">ŠPD "UNSKO-SANSKE ŠUME" d.o.o. BOSANSKA KRUPA</div>
         <div class="org-sub">UPRAVA DRUŠTVA</div>
@@ -2338,65 +2357,63 @@ function exportPravilnik() {
     </div>
     <div class="doc-title">PRAVILNIK</div>
     <div class="doc-subtitle">O UNUTRAŠNJOJ ORGANIZACIJI I SISTEMATIZACIJI RADNIH MJESTA</div>
-    <button class="no-print" onclick="window.print()" style="padding:8px 16px;background:#1a4d2e;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:20px;display:block;margin-left:auto;margin-right:auto;">🖨️ Štampaj / Spremi PDF</button>
-    `);
+    <button class="no-print" onclick="window.print()" style="padding:8px 16px;background:#1a4d2e;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:20px;display:block;margin-left:auto;margin-right:auto;">Štampaj / Spremi PDF</button>
+    `;
 
     // ── I - OPĆE ODREDBE ──
     let clan = 0;
     function nextClan() { clan++; return `<div class="clan-num">Član ${clan}.</div>`; }
 
-    pw.document.write('<div class="section-title">I - OPĆE ODREDBE</div>');
+    h += '<div class="section-title">I - OPĆE ODREDBE</div>';
 
-    pw.document.write(`<div class="clan">${nextClan()}
+    h += `<div class="clan">${nextClan()}
         Ovim Pravilnikom utvrđuje se unutrašnja organizacija, sistematizacija radnih mjesta,
         potreban stepen stručne spreme, koeficijenti za obračun plaća, uslovi rada i broj izvršilaca
         u ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa (u daljem tekstu: Društvo).
-    </div>`);
+    </div>`;
 
-    pw.document.write(`<div class="clan">${nextClan()}
+    h += `<div class="clan">${nextClan()}
         Unutrašnja organizacija Društva zasniva se na principima racionalnosti, funkcionalnosti
         i efikasnosti u obavljanju djelatnosti šumarstva, lovstva, drvne industrije i srodnih djelatnosti.
-    </div>`);
+    </div>`;
 
-    pw.document.write(`<div class="clan">${nextClan()}
+    h += `<div class="clan">${nextClan()}
         Izrazi koji se koriste u ovom Pravilniku za označavanje muškog ili ženskog roda
         podrazumijevaju oba roda.
-    </div>`);
+    </div>`;
 
     // ── II - UNUTRAŠNJA ORGANIZACIJA ──
-    pw.document.write('<div class="section-title">II - UNUTRAŠNJA ORGANIZACIJA</div>');
+    h += '<div class="section-title">II - UNUTRAŠNJA ORGANIZACIJA</div>';
 
-    // Collect all units
     const unitList = [];
     walkOrgTree(organizationalStructure, (node, depth) => { unitList.push({ name: node.name, depth, childCount: node.children ? node.children.length : 0 }); });
 
-    pw.document.write(`<div class="clan">${nextClan()}
+    h += `<div class="clan">${nextClan()}
         Društvo je organizovano kroz sljedeće organizacione jedinice:
         <ol class="ol-units">${unitList.map(u => '<li>' + u.name + '</li>').join('')}</ol>
-    </div>`);
+    </div>`;
 
-    pw.document.write(`<div class="clan">${nextClan()}
+    h += `<div class="clan">${nextClan()}
         Organizacione jedinice iz prethodnog člana obavljaju poslove iz svog djelokruga rada
         utvrđene ovim Pravilnikom i drugim aktima Društva.
-    </div>`);
+    </div>`;
 
-    // Unit descriptions
     const levelNames = { 0: 'sjedište Društva', 1: 'organizaciona jedinica', 2: 'unutrašnja organizaciona jedinica' };
     unitList.forEach(u => {
         const posCount = (orgPositions[u.name] || []).length;
         const childInfo = u.childCount > 0 ? ` Ova jedinica ima ${u.childCount} podređenih organizacionih jedinica.` : '';
-        pw.document.write(`<div class="clan">${nextClan()}
+        h += `<div class="clan">${nextClan()}
             <b>${u.name}</b> je ${levelNames[u.depth] || 'organizaciona jedinica'} sa sistematizovanih <b>${posCount}</b> radnih mjesta.${childInfo}
-        </div>`);
+        </div>`;
     });
 
     // ── III - SISTEMATIZACIJA RADNIH MJESTA ──
-    pw.document.write('<div class="section-title">III - SISTEMATIZACIJA RADNIH MJESTA</div>');
+    h += '<div class="section-title">III - SISTEMATIZACIJA RADNIH MJESTA</div>';
 
-    pw.document.write(`<div class="clan">${nextClan()}
+    h += `<div class="clan">${nextClan()}
         Sistematizacijom radnih mjesta utvrđuju se: nazivi radnih mjesta, potreban stepen stručne spreme,
         koeficijenti za obračun plaća, procent uvećanja za uslove rada i broj izvršilaca za svako radno mjesto.
-    </div>`);
+    </div>`;
 
     let grandTotal = 0;
     walkOrgTree(organizationalStructure, (node, depth) => {
@@ -2404,14 +2421,14 @@ function exportPravilnik() {
         if (!positions.length) return;
         grandTotal += positions.length;
 
-        pw.document.write(`<div class="clan">${nextClan()}`);
+        h += `<div class="clan">${nextClan()}`;
         const cls = depth <= 1 ? 'unit-title' : 'unit-title-l2';
-        pw.document.write(`<div class="${cls}">${node.name}</div>`);
-        pw.document.write(`Sistematizacija radnih mjesta u organizacionoj jedinici ${node.name}:`);
-        pw.document.write(`<table><thead><tr><th>R.br.</th><th>Naziv radnog mjesta</th><th>Stepen stručne spreme</th><th>Koeficijent</th><th>Uslovi rada</th><th>Ukupno</th><th>Br. izvršilaca</th></tr></thead><tbody>`);
+        h += `<div class="${cls}">${node.name}</div>`;
+        h += `Sistematizacija radnih mjesta u organizacionoj jedinici ${node.name}:`;
+        h += `<table><thead><tr><th>R.br.</th><th>Naziv radnog mjesta</th><th>Stepen stručne spreme</th><th>Koeficijent</th><th>Uslovi rada</th><th>Ukupno</th><th>Br. izvršilaca</th></tr></thead><tbody>`;
         positions.forEach((p, i) => {
             const branchNote = p.branch ? ' (' + p.branch.replace(/^PODRUŽNICA\s+/i, '').replace(/^POGON\s+/i, 'Pogon ') + ')' : '';
-            pw.document.write(`<tr>
+            h += `<tr>
                 <td style="text-align:center;">${i+1}</td>
                 <td>${p.title||''}${branchNote}</td>
                 <td>${p.stepen||'–'}</td>
@@ -2419,37 +2436,37 @@ function exportPravilnik() {
                 <td style="text-align:center;">${p.usloviRada > 0 ? p.usloviRada + '%' : '–'}</td>
                 <td style="text-align:center;">${p.ukupno || p.koef || '–'}</td>
                 <td style="text-align:center;">1</td>
-            </tr>`);
+            </tr>`;
         });
-        pw.document.write(`<tr style="font-weight:700;background:#f0faf3;"><td colspan="6" style="text-align:right;">Ukupno ${node.name}:</td><td style="text-align:center;">${positions.length}</td></tr>`);
-        pw.document.write('</tbody></table></div>');
+        h += `<tr style="font-weight:700;background:#f0faf3;"><td colspan="6" style="text-align:right;">Ukupno ${node.name}:</td><td style="text-align:center;">${positions.length}</td></tr>`;
+        h += '</tbody></table></div>';
     });
 
     // Recap
-    pw.document.write(`<div class="recap-box">
+    h += `<div class="recap-box">
         <b>REKAPITULACIJA:</b> Ukupan broj sistematizovanih radnih mjesta: <b>${grandTotal}</b><br>
         Organizacionih jedinica: <b>${unitList.length}</b>
-    </div>`);
+    </div>`;
 
     // ── IV - PRELAZNE I ZAVRŠNE ODREDBE ──
-    pw.document.write('<div class="section-title">IV - PRELAZNE I ZAVRŠNE ODREDBE</div>');
+    h += '<div class="section-title">IV - PRELAZNE I ZAVRŠNE ODREDBE</div>';
 
-    pw.document.write(`<div class="clan">${nextClan()}
+    h += `<div class="clan">${nextClan()}
         Stupanjem na snagu ovog Pravilnika prestaje da važi prethodni Pravilnik o unutrašnjoj
         organizaciji i sistematizaciji radnih mjesta.
-    </div>`);
+    </div>`;
 
-    pw.document.write(`<div class="clan">${nextClan()}
+    h += `<div class="clan">${nextClan()}
         Izmjene i dopune ovog Pravilnika vrše se na način i po postupku predviđenom za
         njegovo donošenje.
-    </div>`);
+    </div>`;
 
-    pw.document.write(`<div class="clan">${nextClan()}
+    h += `<div class="clan">${nextClan()}
         Ovaj Pravilnik stupa na snagu danom donošenja, a primjenjuje se od __________ ${year}. godine.
-    </div>`);
+    </div>`;
 
     // Signature
-    pw.document.write(`<div class="signature-block">
+    h += `<div class="signature-block">
         <div class="sig-left">
             Broj: ________/${year}<br>
             Datum: ${date}<br>
@@ -2459,11 +2476,11 @@ function exportPravilnik() {
             DIREKTOR – PREDSJEDNIK UPRAVE
             <div class="sig-line">_________________________________</div>
         </div>
-    </div>`);
+    </div>`;
 
-    pw.document.write(`<div class="footer-doc">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — Pravilnik o unutrašnjoj organizaciji i sistematizaciji radnih mjesta</div></body></html>`);
-    pw.document.close();
-    showToast('Pravilnik otvoren u novom tabu');
+    h += `<div class="footer-doc">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — Pravilnik o unutrašnjoj organizaciji i sistematizaciji radnih mjesta</div></body></html>`;
+    openHtmlExport(h, 'pravilnik_o_sistematizaciji.html');
+    showToast('Pravilnik generisan');
     logChange('export', 'Generisan Pravilnik o sistematizaciji');
 }
 
@@ -2997,8 +3014,7 @@ function exportPDF() {
     const withKoef = allPos.filter(p => p.koef !== null && p.koef !== undefined);
     const avgK = withKoef.length ? (withKoef.reduce((s,p) => s + p.koef, 0) / withKoef.length).toFixed(2) : '–';
 
-    const pw = window.open('', '_blank');
-    pw.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Organizacijska Šema — Izvještaj</title>
+    let h = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Organizacijska Šema — Izvještaj</title>
     <style>
         body{font-family:Arial,sans-serif;padding:2rem;color:#333;font-size:11px;}
         h1{color:#1a4d2e;font-size:18px;border-bottom:2px solid #1a4d2e;padding-bottom:8px;}
@@ -3022,22 +3038,22 @@ function exportPDF() {
         <div class="s-card"><div class="s-num">${Object.keys(orgPositions).length}</div><div class="s-lbl">Odjela</div></div>
         <div class="s-card"><div class="s-num">${avgK}</div><div class="s-lbl">Prosj. koeficijent</div></div>
     </div>
-    <button class="no-print" onclick="window.print()" style="padding:8px 16px;background:#1a4d2e;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:15px;">🖨️ Štampaj / Spremi PDF</button>`);
+    <button class="no-print" onclick="window.print()" style="padding:8px 16px;background:#1a4d2e;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:15px;">Štampaj / Spremi PDF</button>`;
 
     for (const [dept, positions] of Object.entries(orgPositions)) {
         const pos = (positions || []).filter(p => p && typeof p === 'object');
         if (!pos.length) continue;
-        pw.document.write(`<div class="dept-header">${dept} (${pos.length} pozicija)</div>`);
-        pw.document.write(`<table><thead><tr><th>#</th><th>Pozicija</th><th>Stepen</th><th>Koef.</th><th>UR%</th><th>Ukupno</th><th>Radnik</th></tr></thead><tbody>`);
+        h += `<div class="dept-header">${dept} (${pos.length} pozicija)</div>`;
+        h += `<table><thead><tr><th>#</th><th>Pozicija</th><th>Stepen</th><th>Koef.</th><th>UR%</th><th>Ukupno</th><th>Radnik</th></tr></thead><tbody>`;
         pos.forEach((p, i) => {
             const emp = p.employee || {};
-            pw.document.write(`<tr><td>${i+1}</td><td>${p.title||''}</td><td>${p.stepen||''}</td><td>${p.koef||'Ugovor'}</td><td>${p.usloviRada||'–'}</td><td>${p.ukupno||p.koef||'–'}</td><td>${emp.name||'–'}</td></tr>`);
+            h += `<tr><td>${i+1}</td><td>${p.title||''}</td><td>${p.stepen||''}</td><td>${p.koef||'Ugovor'}</td><td>${p.usloviRada||'–'}</td><td>${p.ukupno||p.koef||'–'}</td><td>${emp.name||'–'}</td></tr>`;
         });
-        pw.document.write('</tbody></table>');
+        h += '</tbody></table>';
     }
-    pw.document.write(`<div class="footer">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — Organizacijska šema</div></body></html>`);
-    pw.document.close();
-    showToast('PDF izvještaj otvoren u novom tabu');
+    h += `<div class="footer">ŠPD "Unsko-Sanske Šume" d.o.o. Bosanska Krupa — Organizacijska šema</div></body></html>`;
+    openHtmlExport(h, 'organizacijska_shema_izvjestaj.html');
+    showToast('PDF izvještaj generisan');
     logChange('export', 'Generisan PDF izvještaj');
 }
 
